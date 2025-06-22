@@ -1,0 +1,25 @@
+; Test bootstrapping functions
+
+(print "=== Bootstrap Functions Test ===")
+
+; Test string operations
+(print "String concatenation:")
+(print (concat "Hello" " " "World"))
+
+(print "String equality:")
+(print (str= "test" "test"))
+(print (str= "test" "other"))
+
+; Test eval function
+(print "Eval function:")
+(print (eval "(+ 5 3)"))
+
+; Test begin function
+(print "Begin function:")
+(print (begin 1 2 3))
+
+; Test load function
+(print "Load function:")
+(load "examples/basic.lap")
+
+(print "=== Bootstrap Test Complete ===") 

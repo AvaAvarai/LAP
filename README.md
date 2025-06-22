@@ -1,6 +1,6 @@
 # LAP: Lisp-like Applied Processor
 
-A Lisp interpreter written in Odin that supports arithmetic, functions, lambda expressions, closures, conditionals, and more.
+A Lisp interpreter written in Odin that supports arithmetic, functions, lambda expressions, closures, conditionals, and **bootstrapping capabilities**.
 
 ## What LAP Does
 
@@ -77,6 +77,28 @@ LAP takes Lisp-like expressions and evaluates them. It processes code through th
 (print #t #f)              ; => #t #f
 ```
 
+### Bootstrapping Functions
+
+LAP includes core functions that enable **self-hosting** - building more complex functionality in LAP itself:
+
+```lisp
+; Read input from stdin
+(read)                     ; => user input as string
+
+; Evaluate strings as LAP code
+(eval "(+ 5 3)")           ; => 8.000
+
+; Load and execute files
+(load "examples/basic.lap")
+
+; String operations
+(concat "Hello" " " "World") ; => "Hello World"
+(str= "test" "test")       ; => #t
+
+; Multiple expressions
+(begin 1 2 3)              ; => 3.000
+```
+
 ### Complex Examples
 
 ```lisp
@@ -91,34 +113,112 @@ LAP takes Lisp-like expressions and evaluates them. It processes code through th
 
 ## Running LAP
 
+### Basic Usage
+
 ```bash
+# Run test suite
 odin run .
+
+# Run a specific example file
+odin run . -- examples/filename.lap
 ```
 
-This runs the test suite showing tokenization, parsing, and evaluation for each example.
+### Interactive REPL
+
+LAP includes a **self-hosted REPL** written entirely in LAP:
+
+```bash
+# Start the interactive REPL
+odin run . -- examples/repl.lap
+```
+
+The REPL supports:
+
+- **Interactive expression evaluation** - Type LAP expressions and see results
+- **Piped input** - Process expressions from shell commands
+- **Built-in help system** (`help`)
+- **File loading** (`load`)
+- **Clean exit** (`quit`)
+
+#### REPL Examples
+
+```bash
+# Interactive mode
+odin run . -- examples/repl.lap
+> (+ 2 3)
+5.000
+> (print "Hello, LAP!")
+"Hello, LAP!"
+0.000
+> quit
+Goodbye!
+
+# Piped input mode
+echo "(+ 2 3)" | odin run . -- examples/repl.lap
+echo '(print "Hello, World!")' | odin run . -- examples/repl.lap
+```
 
 ## Example Programs
 
 A collection of example LAP programs is available in the [`examples/`](examples/) folder. These cover:
 
-- Arithmetic and expressions
-- Function and lambda usage
-- Closures and higher-order functions
-- Recursion (factorial, Fibonacci)
-- Comparison and conditionals
-- Output formatting
+### Basic Examples
 
-To run an example program:
+- **`basic.lap`** - Arithmetic, functions, conditionals, and comparisons
+- **`factorial.lap`** - Recursive factorial function
+- **`fibonacci.lap`** - Recursive Fibonacci sequence
+- **`lambda_demo.lap`** - Lambda expressions and higher-order functions
+- **`comparison_demo.lap`** - All comparison operators
+- **`arithmetic_demo.lap`** - Arithmetic operations and precedence
+- **`closure_demo.lap`** - Closures and lexical scoping
 
-```bash
-odin run . -- examples/filename.lap
-```
+### Bootstrapping Examples
 
-See [`examples/README.md`](examples/README.md) for details on each demo.
+- **`bootstrap_test.lap`** - Test of bootstrapping functions
+- **`repl.lap`** - **Self-hosted REPL implementation** - demonstrates bootstrapping by implementing an interactive environment entirely in LAP
+
+See [`examples/README.md`](examples/README.md) for detailed descriptions of each example.
+
+## Bootstrapping & Self-Hosting
+
+LAP is designed with **bootstrapping** in mind - the ability to build more complex functionality using the language itself. The core bootstrapping functions enable:
+
+- **Self-hosted REPL**: Interactive development environment written in LAP
+- **Code generation**: Create and evaluate LAP code dynamically
+- **File processing**: Load and execute LAP programs
+- **String manipulation**: Build and process code as strings
+- **Extensibility**: Add new language features in LAP itself
+
+This foundation makes LAP suitable for:
+
+- Language experimentation
+- Self-modifying code
+- Metaprogramming
+- Educational language implementation
+
+## Technical Implementation
+
+### Environment Management
+
+- **Lexical scoping** with proper closure support
+- **Environment chaining** for variable lookup
+- **Proper parent environment references** (not deep copying)
+
+### Input Processing
+
+- **Windows-compatible** line ending handling (`\r\n`)
+- **Comment filtering** (lines starting with `;`)
+- **Blank line removal** for clean execution
+
+### Error Handling
+
+- **Graceful error reporting** for unbound symbols
+- **Robust parsing** with proper tokenization
+- **Clean exit** on EOF or quit commands
 
 ## Project Files
 
-- `main.odin` - Test cases and main program
+- `main.odin` - Main program entry point and test runner
 - `tokenizer.odin` - Breaks input into tokens
 - `parser.odin` - Builds AST from tokens
 - `evaluator.odin` - Evaluates AST and manages environment

@@ -1,0 +1,36 @@
+; Simple REPL implementation in LAP
+; This demonstrates bootstrapping - the REPL is written in LAP itself
+
+(print "=== LAP REPL ===")
+(print "Type expressions to evaluate")
+(print "Type 'quit' to exit")
+(print "Type 'help' for help")
+
+; Define the REPL loop
+(define (repl-loop)
+  (define input (read))
+  (if (str= input "")
+      (print "Goodbye!")
+      (if (str= input "quit")
+          (print "Goodbye!")
+          (if (str= input "help")
+              (begin
+                (print "Available commands:")
+                (print "  quit - exit the REPL")
+                (print "  help - show this help")
+                (print "  load <file> - load and execute a file")
+                (print "  Any LAP expression - evaluate it")
+                (repl-loop))
+              (if (str= input "load")
+                  (begin
+                    (print "Enter filename:")
+                    (define filename (read))
+                    (load filename)
+                    (repl-loop))
+                  (begin
+                    (define result (eval input))
+                    (print result)
+                    (repl-loop)))))))
+
+; Start the REPL
+(repl-loop) 

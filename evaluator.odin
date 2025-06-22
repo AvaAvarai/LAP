@@ -2,6 +2,8 @@ package main
 
 import "core:fmt"
 import "core:strconv"
+import "core:os"
+import "core:strings"
 
 Value_Kind :: enum {
     Number,
@@ -16,6 +18,7 @@ Value :: struct {
     kind: Value_Kind,
     number: f64,
     procedure: proc(args: []Value) -> Value,
+    procedure_with_env: proc(args: []Value, env: ^Env) -> Value,
     list: []Value,
     boolean: bool,
     // Lambda-specific fields
@@ -78,8 +81,8 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
 
         // Special form: define
         if head.kind == Expr_Kind.Atom && head.value == "define" {
-            if len(args) != 2 {
-                return make_error("Invalid define syntax: need exactly 2 arguments");
+            if len(args) < 2 {
+                return make_error("Invalid define syntax: need at least 2 arguments");
             }
             
             // (define name value)
@@ -90,23 +93,34 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
                 return val;
             }
             
-            // (define (name params...) body)
+            // (define (name params...) body...)
             if args[0].kind == Expr_Kind.List && len(args[0].children) > 0 {
                 name := args[0].children[0].value;
                 params: [dynamic]string;
-                for param in args[0].children[1:] {
+                // Handle parameters (skip the first element which is the function name)
+                for i := 1; i < len(args[0].children); i += 1 {
+                    param := args[0].children[i];
                     if param.kind != Expr_Kind.Atom {
                         return make_error("Function parameters must be symbols");
                     }
                     append(&params, param.value);
                 }
-                // The function body is args[1]
+                
+                // Create a closure environment that includes the function itself
+                closure_env := deep_copy_env(env);
+                
+                // Create the lambda with all remaining expressions as the body
                 lambda := Value{
                     kind = Value_Kind.Lambda,
                     lambda_params = params[:],
-                    lambda_body = []Expr{args[1]},
-                    lambda_env = env,
+                    lambda_body = args[1:],
+                    lambda_env = &closure_env^,
                 };
+                
+                // Now add the function to its own environment for recursion
+                closure_env.table[name] = lambda;
+                
+                // Also add to the current environment
                 env.table[name] = lambda;
                 return lambda;
             }
@@ -170,7 +184,11 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
 
         // Apply function
         if fn_val.kind == Value_Kind.Proc {
-            return fn_val.procedure(evaled_args[:]);
+            if fn_val.procedure_with_env != nil {
+                return fn_val.procedure_with_env(evaled_args[:], env);
+            } else {
+                return fn_val.procedure(evaled_args[:]);
+            }
         } else if fn_val.kind == Value_Kind.Lambda {
             return apply_lambda(fn_val, evaled_args[:]);
         }
@@ -221,36 +239,34 @@ apply_lambda :: proc(lambda: Value, args: []Value) -> Value {
 }
 
 make_global_env :: proc() -> Env {
-    env := Env{table = make(map[string]Value), parent = nil};
+    env := Env{table = make(map[string]Value)};
 
     add_proc :: proc(args: []Value) -> Value {
-        sum := 0.0;
-        for arg in args {
-            if arg.kind == Value_Kind.Number {
-                sum += arg.number;
-            }
+        if len(args) < 2 {
+            return make_error("+ requires at least 2 arguments");
         }
-        return Value{kind = Value_Kind.Number, number = sum};
+        result := args[0].number;
+        for i := 1; i < len(args); i += 1 {
+            result += args[i].number;
+        }
+        return Value{kind = Value_Kind.Number, number = result};
     };
 
     mul_proc :: proc(args: []Value) -> Value {
-        product := 1.0;
-        for arg in args {
-            if arg.kind == Value_Kind.Number {
-                product *= arg.number;
-            }
+        if len(args) < 2 {
+            return make_error("* requires at least 2 arguments");
         }
-        return Value{kind = Value_Kind.Number, number = product};
+        result := args[0].number;
+        for i := 1; i < len(args); i += 1 {
+            result *= args[i].number;
+        }
+        return Value{kind = Value_Kind.Number, number = result};
     };
 
     sub_proc :: proc(args: []Value) -> Value {
-        if len(args) == 0 {
-            return Value{kind = Value_Kind.Number, number = 0};
+        if len(args) < 2 {
+            return make_error("- requires at least 2 arguments");
         }
-        if len(args) == 1 {
-            return Value{kind = Value_Kind.Number, number = -args[0].number};
-        }
-        
         result := args[0].number;
         for i := 1; i < len(args); i += 1 {
             result -= args[i].number;
@@ -258,77 +274,46 @@ make_global_env :: proc() -> Env {
         return Value{kind = Value_Kind.Number, number = result};
     };
 
-    // Individual comparison functions to avoid closure issues
     eq_proc :: proc(args: []Value) -> Value {
         if len(args) != 2 {
             return Value{kind = Value_Kind.Bool, boolean = false};
         }
-        
-        if args[0].kind == Value_Kind.Number && args[1].kind == Value_Kind.Number {
-            return Value{kind = Value_Kind.Bool, boolean = args[0].number == args[1].number};
-        }
-        
-        return Value{kind = Value_Kind.Bool, boolean = false};
+        return Value{kind = Value_Kind.Bool, boolean = args[0].number == args[1].number};
     };
 
     lt_proc :: proc(args: []Value) -> Value {
         if len(args) != 2 {
             return Value{kind = Value_Kind.Bool, boolean = false};
         }
-        
-        if args[0].kind == Value_Kind.Number && args[1].kind == Value_Kind.Number {
-            return Value{kind = Value_Kind.Bool, boolean = args[0].number < args[1].number};
-        }
-        
-        return Value{kind = Value_Kind.Bool, boolean = false};
+        return Value{kind = Value_Kind.Bool, boolean = args[0].number < args[1].number};
     };
 
     gt_proc :: proc(args: []Value) -> Value {
         if len(args) != 2 {
             return Value{kind = Value_Kind.Bool, boolean = false};
         }
-        
-        if args[0].kind == Value_Kind.Number && args[1].kind == Value_Kind.Number {
-            return Value{kind = Value_Kind.Bool, boolean = args[0].number > args[1].number};
-        }
-        
-        return Value{kind = Value_Kind.Bool, boolean = false};
+        return Value{kind = Value_Kind.Bool, boolean = args[0].number > args[1].number};
     };
 
     lte_proc :: proc(args: []Value) -> Value {
         if len(args) != 2 {
             return Value{kind = Value_Kind.Bool, boolean = false};
         }
-        
-        if args[0].kind == Value_Kind.Number && args[1].kind == Value_Kind.Number {
-            return Value{kind = Value_Kind.Bool, boolean = args[0].number <= args[1].number};
-        }
-        
-        return Value{kind = Value_Kind.Bool, boolean = false};
+        return Value{kind = Value_Kind.Bool, boolean = args[0].number <= args[1].number};
     };
 
     gte_proc :: proc(args: []Value) -> Value {
         if len(args) != 2 {
             return Value{kind = Value_Kind.Bool, boolean = false};
         }
-        
-        if args[0].kind == Value_Kind.Number && args[1].kind == Value_Kind.Number {
-            return Value{kind = Value_Kind.Bool, boolean = args[0].number >= args[1].number};
-        }
-        
-        return Value{kind = Value_Kind.Bool, boolean = false};
+        return Value{kind = Value_Kind.Bool, boolean = args[0].number >= args[1].number};
     };
 
     ne_proc :: proc(args: []Value) -> Value {
         if len(args) != 2 {
             return Value{kind = Value_Kind.Bool, boolean = false};
         }
-        
-        if args[0].kind == Value_Kind.Number && args[1].kind == Value_Kind.Number {
-            return Value{kind = Value_Kind.Bool, boolean = args[0].number != args[1].number};
-        }
-        
-        return Value{kind = Value_Kind.Bool, boolean = false};
+        return Value{kind = Value_Kind.Bool, boolean = args[0].number != args[1].number};
     };
 
     print_proc :: proc(args: []Value) -> Value {
@@ -368,6 +353,134 @@ make_global_env :: proc() -> Env {
         return Value{kind = Value_Kind.Number, number = 0};
     };
 
+    read_proc :: proc(args: []Value) -> Value {
+        if len(args) != 0 {
+            return make_error("read takes no arguments");
+        }
+        fmt.print("> ");
+        input: [1024]u8;
+        n, _ := os.read(os.stdin, input[:]);
+        if n == 0 {
+            return Value{kind = Value_Kind.String, string = ""};
+        }
+        // Remove both carriage return and newline for Windows compatibility
+        end := n;
+        if end > 0 && input[end-1] == '\n' {
+            end -= 1;
+        }
+        if end > 0 && input[end-1] == '\r' {
+            end -= 1;
+        }
+        return Value{kind = Value_Kind.String, string = string(input[:end])};
+    };
+
+    eval_proc :: proc(args: []Value, env: ^Env) -> Value {
+        if len(args) != 1 {
+            return make_error("eval takes exactly 1 argument");
+        }
+        if args[0].kind != Value_Kind.String {
+            return make_error("eval argument must be a string");
+        }
+        
+        // Tokenize and parse the string
+        tokens := tokenize(args[0].string);
+        if len(tokens) == 0 {
+            return Value{kind = Value_Kind.Number, number = 0};
+        }
+        
+        exprs, _ := parse_exprs(tokens);
+        if len(exprs) == 0 {
+            return make_error("Failed to parse expression");
+        }
+        
+        // Evaluate in the current environment
+        result := Value{kind = Value_Kind.Number, number = 0};
+        for expr in exprs {
+            result = eval(expr, env);
+        }
+        return result;
+    };
+
+    load_proc :: proc(args: []Value) -> Value {
+        if len(args) != 1 {
+            return make_error("load takes exactly 1 argument");
+        }
+        if args[0].kind != Value_Kind.String {
+            return make_error("load argument must be a string");
+        }
+        
+        // Read file
+        data, ok := os.read_entire_file(args[0].string);
+        if !ok {
+            return make_error(fmt.tprintf("Could not read file: %s", args[0].string));
+        }
+        defer delete(data);
+        
+        content := string(data);
+        
+        // Remove comments and blank lines
+        lines := strings.split_lines(content);
+        code_lines: [dynamic]string;
+        for line in lines {
+            trimmed := strings.trim_space(line);
+            if len(trimmed) == 0 || trimmed[0] == ';' {
+                continue;
+            }
+            append(&code_lines, trimmed);
+        }
+        code := strings.join(code_lines[:], " ");
+        
+        // Evaluate the code
+        tokens := tokenize(code);
+        exprs, _ := parse_exprs(tokens);
+        if len(exprs) == 0 {
+            return make_error("Failed to parse file");
+        }
+        
+        // Evaluate in a new global environment
+        load_env := make_global_env();
+        result := Value{kind = Value_Kind.Number, number = 0};
+        for expr in exprs {
+            result = eval(expr, &load_env);
+        }
+        return result;
+    };
+
+    concat_proc :: proc(args: []Value) -> Value {
+        if len(args) < 2 {
+            return make_error("concat takes at least 2 arguments");
+        }
+        
+        result: [dynamic]u8;
+        for arg in args {
+            if arg.kind != Value_Kind.String {
+                return make_error("concat arguments must be strings");
+            }
+            for char in arg.string {
+                append(&result, u8(char));
+            }
+        }
+        return Value{kind = Value_Kind.String, string = string(result[:])};
+    };
+
+    str_eq_proc :: proc(args: []Value) -> Value {
+        if len(args) != 2 {
+            return Value{kind = Value_Kind.Bool, boolean = false};
+        }
+        if args[0].kind != Value_Kind.String || args[1].kind != Value_Kind.String {
+            return Value{kind = Value_Kind.Bool, boolean = false};
+        }
+        return Value{kind = Value_Kind.Bool, boolean = args[0].string == args[1].string};
+    };
+
+    begin_proc :: proc(args: []Value) -> Value {
+        if len(args) == 0 {
+            return Value{kind = Value_Kind.Number, number = 0};
+        }
+        // Return the last argument
+        return args[len(args) - 1];
+    };
+
     env.table["+"] = Value{kind = Value_Kind.Proc, procedure = add_proc};
     env.table["*"] = Value{kind = Value_Kind.Proc, procedure = mul_proc};
     env.table["-"] = Value{kind = Value_Kind.Proc, procedure = sub_proc};
@@ -378,6 +491,12 @@ make_global_env :: proc() -> Env {
     env.table[">="] = Value{kind = Value_Kind.Proc, procedure = gte_proc};
     env.table["!="] = Value{kind = Value_Kind.Proc, procedure = ne_proc};
     env.table["print"] = Value{kind = Value_Kind.Proc, procedure = print_proc};
+    env.table["read"] = Value{kind = Value_Kind.Proc, procedure = read_proc};
+    env.table["eval"] = Value{kind = Value_Kind.Proc, procedure_with_env = eval_proc};
+    env.table["load"] = Value{kind = Value_Kind.Proc, procedure = load_proc};
+    env.table["concat"] = Value{kind = Value_Kind.Proc, procedure = concat_proc};
+    env.table["str="] = Value{kind = Value_Kind.Proc, procedure = str_eq_proc};
+    env.table["begin"] = Value{kind = Value_Kind.Proc, procedure = begin_proc};
 
     return env;
 }
@@ -392,6 +511,7 @@ deep_copy_env :: proc(env: ^Env) -> ^Env {
     for k, v in env.table {
         new_env.table[k] = v;
     }
-    new_env.parent = deep_copy_env(env.parent);
+    // Reference the parent, do not deep copy it
+    new_env.parent = env.parent;
     return new_env;
 }
