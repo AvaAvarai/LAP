@@ -12,6 +12,7 @@ Expr :: struct {
     kind: Expr_Kind,
     value: string,        // for Atom
     children: []Expr,     // for List
+    token_kind: Token_Kind, // Preserve original token kind
 }
 
 parse_exprs :: proc(tokens: []Token) -> ([]Expr, int) {
@@ -29,7 +30,7 @@ parse_exprs :: proc(tokens: []Token) -> ([]Expr, int) {
 
 parse_expr :: proc(tokens: []Token) -> (Expr, int) {
     if len(tokens) == 0 {
-        return Expr{kind = Expr_Kind.Atom, value = "EOF"}, 0;
+        return Expr{kind = Expr_Kind.Atom, value = "EOF", token_kind = Token_Kind.Symbol}, 0;
     }
 
     token := tokens[0];
@@ -46,14 +47,14 @@ parse_expr :: proc(tokens: []Token) -> (Expr, int) {
 
         if i >= len(tokens) || tokens[i].kind != Token_Kind.Paren_Right {
             fmt.println("Error: unmatched '('");
-            return Expr{kind = Expr_Kind.Atom, value = "ERROR"}, len(tokens);
+            return Expr{kind = Expr_Kind.Atom, value = "ERROR", token_kind = Token_Kind.Symbol}, len(tokens);
         }
 
-        return Expr{kind = Expr_Kind.List, children = children[:]}, i + 1;
+        return Expr{kind = Expr_Kind.List, children = children[:], token_kind = Token_Kind.Symbol}, i + 1;
     }
 
     // Single Atom
-    return Expr{kind = Expr_Kind.Atom, value = token.value}, 1;
+    return Expr{kind = Expr_Kind.Atom, value = token.value, token_kind = token.kind}, 1;
 }
 
 print_expr :: proc(expr: Expr, indent: int) {

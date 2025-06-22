@@ -9,6 +9,7 @@ Value_Kind :: enum {
     List,
     Bool,
     Lambda,
+    String,
 }
 
 Value :: struct {
@@ -21,6 +22,7 @@ Value :: struct {
     lambda_params: []string,
     lambda_body: []Expr,
     lambda_env: ^Env,  // Closure environment
+    string: string,
 }
 
 Env :: map[string]Value
@@ -40,6 +42,16 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
         }
         if expr.value == "#f" || expr.value == "false" {
             return Value{kind = Value_Kind.Bool, boolean = false};
+        }
+
+        // Handle string literals
+        if len(expr.value) > 0 && expr.value[0] == '"' {
+            return Value{kind = Value_Kind.String, string = expr.value[1:len(expr.value)-1]};
+        }
+
+        // Handle string tokens (from tokenizer)
+        if expr.token_kind == Token_Kind.String {
+            return Value{kind = Value_Kind.String, string = expr.value};
         }
 
         // Otherwise: symbol lookup
@@ -171,6 +183,8 @@ is_truthy :: proc(val: Value) -> bool {
         return true; // Functions are truthy
     case Value_Kind.Lambda:
         return true; // Lambdas are truthy
+    case Value_Kind.String:
+        return len(val.string) > 0;
     case:
         return false;
     }
@@ -254,6 +268,66 @@ make_global_env :: proc() -> Env {
         return Value{kind = Value_Kind.Bool, boolean = false};
     };
 
+    lt_proc :: proc(args: []Value) -> Value {
+        if len(args) != 2 {
+            return Value{kind = Value_Kind.Bool, boolean = false};
+        }
+        
+        if args[0].kind == Value_Kind.Number && args[1].kind == Value_Kind.Number {
+            return Value{kind = Value_Kind.Bool, boolean = args[0].number < args[1].number};
+        }
+        
+        return Value{kind = Value_Kind.Bool, boolean = false};
+    };
+
+    gt_proc :: proc(args: []Value) -> Value {
+        if len(args) != 2 {
+            return Value{kind = Value_Kind.Bool, boolean = false};
+        }
+        
+        if args[0].kind == Value_Kind.Number && args[1].kind == Value_Kind.Number {
+            return Value{kind = Value_Kind.Bool, boolean = args[0].number > args[1].number};
+        }
+        
+        return Value{kind = Value_Kind.Bool, boolean = false};
+    };
+
+    lte_proc :: proc(args: []Value) -> Value {
+        if len(args) != 2 {
+            return Value{kind = Value_Kind.Bool, boolean = false};
+        }
+        
+        if args[0].kind == Value_Kind.Number && args[1].kind == Value_Kind.Number {
+            return Value{kind = Value_Kind.Bool, boolean = args[0].number <= args[1].number};
+        }
+        
+        return Value{kind = Value_Kind.Bool, boolean = false};
+    };
+
+    gte_proc :: proc(args: []Value) -> Value {
+        if len(args) != 2 {
+            return Value{kind = Value_Kind.Bool, boolean = false};
+        }
+        
+        if args[0].kind == Value_Kind.Number && args[1].kind == Value_Kind.Number {
+            return Value{kind = Value_Kind.Bool, boolean = args[0].number >= args[1].number};
+        }
+        
+        return Value{kind = Value_Kind.Bool, boolean = false};
+    };
+
+    ne_proc :: proc(args: []Value) -> Value {
+        if len(args) != 2 {
+            return Value{kind = Value_Kind.Bool, boolean = false};
+        }
+        
+        if args[0].kind == Value_Kind.Number && args[1].kind == Value_Kind.Number {
+            return Value{kind = Value_Kind.Bool, boolean = args[0].number != args[1].number};
+        }
+        
+        return Value{kind = Value_Kind.Bool, boolean = false};
+    };
+
     print_proc :: proc(args: []Value) -> Value {
         for arg, i in args {
             if i > 0 {
@@ -268,6 +342,8 @@ make_global_env :: proc() -> Env {
                 } else {
                     fmt.print("#f");
                 }
+            case Value_Kind.String:
+                fmt.printf("\"%s\"", arg.string);
             case Value_Kind.List:
                 fmt.print("(");
                 for child, j in arg.list {
@@ -295,6 +371,11 @@ make_global_env :: proc() -> Env {
     env["*"] = Value{kind = Value_Kind.Proc, procedure = mul_proc};
     env["-"] = Value{kind = Value_Kind.Proc, procedure = sub_proc};
     env["="] = Value{kind = Value_Kind.Proc, procedure = eq_proc};
+    env["<"] = Value{kind = Value_Kind.Proc, procedure = lt_proc};
+    env[">"] = Value{kind = Value_Kind.Proc, procedure = gt_proc};
+    env["<="] = Value{kind = Value_Kind.Proc, procedure = lte_proc};
+    env[">="] = Value{kind = Value_Kind.Proc, procedure = gte_proc};
+    env["!="] = Value{kind = Value_Kind.Proc, procedure = ne_proc};
     env["print"] = Value{kind = Value_Kind.Proc, procedure = print_proc};
 
     return env;

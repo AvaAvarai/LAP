@@ -7,6 +7,7 @@ Token_Kind :: enum {
     Paren_Right,
     Symbol,
     Number,
+    String,
 }
 
 Token :: struct {
@@ -43,6 +44,24 @@ tokenize :: proc(src: string) -> []Token {
         if c == ')' {
             append(&tokens, Token{kind = Token_Kind.Paren_Right, value = ")"});
             i += 1;
+            continue;
+        }
+
+        if c == '"' {
+            start := i + 1;
+            i += 1;
+            for i < len(src) && src[i] != '"' {
+                i += 1;
+            }
+            if i < len(src) {
+                text := src[start:i];
+                append(&tokens, Token{kind = Token_Kind.String, value = text});
+                i += 1;
+            } else {
+                // Unterminated string
+                text := src[start:i];
+                append(&tokens, Token{kind = Token_Kind.String, value = text});
+            }
             continue;
         }
 

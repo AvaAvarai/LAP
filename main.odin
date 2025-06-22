@@ -23,6 +23,15 @@ main :: proc() {
         "(print #t #f)",
         "(define result (+ 5 3))",
         "(print result)",
+        // Comparison operator tests
+        "(print (< 3 5))",
+        "(print (> 10 5))",
+        "(print (<= 5 5))",
+        "(print (>= 7 3))",
+        "(print (!= 4 4))",
+        "(print (= 4 4))",
+        "(if (< 3 5) (print \"3 is less than 5\") (print \"error\"))",
+        "(if (> 2 8) (print \"error\") (print \"2 is not greater than 8\"))",
     };
 
     env := make_global_env();
