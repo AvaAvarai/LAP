@@ -1,9 +1,11 @@
-# LAP: Lisp-like Applied Processor written in Odin
+# LAP: Lisp-like Applied Processor
+
+This language is written in Odin.
 
 ## Pipeline Overview
 
-[Source code string]
-      ↓
+[Source code string]  
+      ↓  
 🧱 1. **Tokenizer (Lexer)** – breaks raw input into tokens  
       ↓  
 🌲 2. **Parser** – builds nested AST (usually as lists)  
