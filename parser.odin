@@ -70,16 +70,71 @@ print_expr :: proc(expr: Expr, indent: int) {
 }
 
 pretty_print_expr :: proc(expr: Expr) -> string {
+    return pretty_print_expr_indented(expr, 0);
+}
+
+pretty_print_expr_indented :: proc(expr: Expr, indent: int) -> string {
     switch expr.kind {
     case Expr_Kind.Atom:
         return expr.value;
     case Expr_Kind.List:
-        parts: [dynamic]string;
-        for child in expr.children {
-            append(&parts, pretty_print_expr(child));
+        if len(expr.children) == 0 {
+            return "()";
         }
-        return strings.concatenate({"(", strings.join(parts[:], " "), ")"});
+        
+        // Check if this should be formatted on multiple lines
+        should_multiline := should_format_multiline(expr);
+        
+        if should_multiline {
+            parts: [dynamic]string;
+            indent_str := strings.repeat("  ", indent);
+            child_indent_str := strings.repeat("  ", indent + 1);
+            
+            append(&parts, "(");
+            for child, i in expr.children {
+                if i > 0 {
+                    append(&parts, "\n");
+                    append(&parts, child_indent_str);
+                }
+                append(&parts, pretty_print_expr_indented(child, indent + 1));
+            }
+            append(&parts, ")");
+            
+            return strings.concatenate(parts[:]);
+        } else {
+            // Single line format
+            parts: [dynamic]string;
+            for child in expr.children {
+                append(&parts, pretty_print_expr_indented(child, indent));
+            }
+            return strings.concatenate({"(", strings.join(parts[:], " "), ")"});
+        }
     case:
         return "ERROR";
     }
+}
+
+should_format_multiline :: proc(expr: Expr) -> bool {
+    if expr.kind != Expr_Kind.List {
+        return false;
+    }
+    
+    // Format multiline if:
+    // 1. Has more than 3 children, or
+    // 2. Any child is a list with children, or
+    // 3. Total length would be too long
+    
+    if len(expr.children) > 3 {
+        return true;
+    }
+    
+    total_length := 2; // "(" and ")"
+    for child in expr.children {
+        if child.kind == Expr_Kind.List && len(child.children) > 0 {
+            return true;
+        }
+        total_length += len(child.value) + 1; // +1 for space
+    }
+    
+    return total_length > 80; // Arbitrary line length limit
 }
