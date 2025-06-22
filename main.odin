@@ -11,7 +11,15 @@ main :: proc() {
         "42",
         "hello",
         "(define (square x) (* x x))",
+        // New lambda test cases
+        "((lambda (x) (* x x)) 5)",
+        "(define double (lambda (x) (+ x x)))",
+        "(double 7)",
+        "(define add (lambda (x y) (+ x y)))",
+        "(add 3 4)",
     };
+
+    env := make_global_env();
 
     for test_input, i in test_cases {
         fmt.printf("=== Test Case %d ===\n", i + 1);
@@ -34,7 +42,6 @@ main :: proc() {
             fmt.printf("%s\n", pretty_print_expr(expr));
         }
         
-        env := make_global_env();
         for expr in exprs {
             val := eval(expr, &env);
             if val.kind == Value_Kind.Number {

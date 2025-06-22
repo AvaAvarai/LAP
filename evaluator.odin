@@ -8,6 +8,7 @@ Value_Kind :: enum {
     Proc,
     List,
     Bool,
+    Lambda,
 }
 
 Value :: struct {
@@ -16,6 +17,10 @@ Value :: struct {
     procedure: proc(args: []Value) -> Value,
     list: []Value,
     boolean: bool,
+    // Lambda-specific fields
+    lambda_params: []string,
+    lambda_body: []Expr,
+    lambda_env: ^Env,  // Closure environment
 }
 
 Env :: map[string]Value
@@ -99,9 +104,40 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
             }
         }
 
+        // Special form: lambda
+        if head.kind == Expr_Kind.Atom && head.value == "lambda" {
+            if len(args) != 2 {
+                fmt.println("Invalid lambda syntax: need parameters and body");
+                return Value{kind = Value_Kind.Number, number = 0};
+            }
+            
+            // Extract parameters
+            if args[0].kind != Expr_Kind.List {
+                fmt.println("Lambda parameters must be a list");
+                return Value{kind = Value_Kind.Number, number = 0};
+            }
+            
+            params: [dynamic]string;
+            for param in args[0].children {
+                if param.kind != Expr_Kind.Atom {
+                    fmt.println("Lambda parameters must be symbols");
+                    return Value{kind = Value_Kind.Number, number = 0};
+                }
+                append(&params, param.value);
+            }
+            
+            // Create lambda value with closure
+            return Value{
+                kind = Value_Kind.Lambda,
+                lambda_params = params[:],
+                lambda_body = args[1:],
+                lambda_env = env,
+            };
+        }
+
         // Evaluate head to get function
         fn_val := eval(head, env);
-        if fn_val.kind != Value_Kind.Proc {
+        if fn_val.kind != Value_Kind.Proc && fn_val.kind != Value_Kind.Lambda {
             fmt.printf("Head of list is not a function: %v\n", head.value);
             return Value{kind = Value_Kind.Number, number = 0};
         }
@@ -112,7 +148,12 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
             append(&evaled_args, eval(arg, env));
         }
 
-        return fn_val.procedure(evaled_args[:]);
+        // Apply function
+        if fn_val.kind == Value_Kind.Proc {
+            return fn_val.procedure(evaled_args[:]);
+        } else if fn_val.kind == Value_Kind.Lambda {
+            return apply_lambda(fn_val, evaled_args[:]);
+        }
     }
     
     return Value{kind = Value_Kind.Number, number = 0};
@@ -128,9 +169,39 @@ is_truthy :: proc(val: Value) -> bool {
         return len(val.list) > 0;
     case Value_Kind.Proc:
         return true; // Procedures are always truthy
+    case Value_Kind.Lambda:
+        return true; // Lambdas are always truthy
     case:
         return false;
     }
+}
+
+apply_lambda :: proc(lambda: Value, args: []Value) -> Value {
+    if len(args) != len(lambda.lambda_params) {
+        fmt.printf("Lambda expects %d arguments, got %d\n", len(lambda.lambda_params), len(args));
+        return Value{kind = Value_Kind.Number, number = 0};
+    }
+    
+    // Create new environment with closure
+    new_env := make(Env);
+    
+    // Copy closure environment
+    for key, value in lambda.lambda_env {
+        new_env[key] = value;
+    }
+    
+    // Bind parameters
+    for param, i in lambda.lambda_params {
+        new_env[param] = args[i];
+    }
+    
+    // Evaluate lambda body
+    result := Value{kind = Value_Kind.Number, number = 0};
+    for expr in lambda.lambda_body {
+        result = eval(expr, &new_env);
+    }
+    
+    return result;
 }
 
 make_global_env :: proc() -> Env {
