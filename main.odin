@@ -29,6 +29,10 @@ main :: proc() {
         for expr in exprs {
             print_expr(expr, 1);
         }
+        fmt.printf("Pretty Printed AST:\n");
+        for expr in exprs {
+            fmt.printf("%s\n", pretty_print_expr(expr));
+        }
         fmt.println();
     }
 }

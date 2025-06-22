@@ -68,3 +68,18 @@ print_expr :: proc(expr: Expr, indent: int) {
         }
     }
 }
+
+pretty_print_expr :: proc(expr: Expr) -> string {
+    switch expr.kind {
+    case Expr_Kind.Atom:
+        return expr.value;
+    case Expr_Kind.List:
+        parts: [dynamic]string;
+        for child in expr.children {
+            append(&parts, pretty_print_expr(child));
+        }
+        return strings.concatenate({"(", strings.join(parts[:], " "), ")"});
+    case:
+        return "ERROR";
+    }
+}
