@@ -254,10 +254,48 @@ make_global_env :: proc() -> Env {
         return Value{kind = Value_Kind.Bool, boolean = false};
     };
 
+    print_proc :: proc(args: []Value) -> Value {
+        for arg, i in args {
+            if i > 0 {
+                fmt.print(" ");
+            }
+            switch arg.kind {
+            case Value_Kind.Number:
+                fmt.printf("%f", arg.number);
+            case Value_Kind.Bool:
+                if arg.boolean {
+                    fmt.print("#t");
+                } else {
+                    fmt.print("#f");
+                }
+            case Value_Kind.List:
+                fmt.print("(");
+                for child, j in arg.list {
+                    if j > 0 {
+                        fmt.print(" ");
+                    }
+                    // Recursively print list elements
+                    temp_val := Value{kind = Value_Kind.List, list = []Value{child}};
+                    print_proc([]Value{temp_val});
+                }
+                fmt.print(")");
+            case Value_Kind.Proc:
+                fmt.print("#<procedure>");
+            case Value_Kind.Lambda:
+                fmt.print("#<lambda>");
+            case:
+                fmt.print("unknown");
+            }
+        }
+        fmt.println();
+        return Value{kind = Value_Kind.Number, number = 0};
+    };
+
     env["+"] = Value{kind = Value_Kind.Proc, procedure = add_proc};
     env["*"] = Value{kind = Value_Kind.Proc, procedure = mul_proc};
     env["-"] = Value{kind = Value_Kind.Proc, procedure = sub_proc};
     env["="] = Value{kind = Value_Kind.Proc, procedure = eq_proc};
+    env["print"] = Value{kind = Value_Kind.Proc, procedure = print_proc};
 
     return env;
 }

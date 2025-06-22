@@ -17,6 +17,12 @@ main :: proc() {
         "(double 7)",
         "(define add (lambda (x y) (+ x y)))",
         "(add 3 4)",
+        // Print function tests
+        "(print 42)",
+        "(print (+ 1 2 3))",
+        "(print #t #f)",
+        "(define result (+ 5 3))",
+        "(print result)",
     };
 
     env := make_global_env();
