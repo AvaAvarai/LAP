@@ -1,0 +1,45 @@
+; Comparison operators demo
+; Shows all comparison operators and conditional logic
+
+(print "Comparison operators demo:")
+
+; Define some test values
+(define a 10)
+(define b 5)
+(define c 10)
+
+(print "a = " a)
+(print "b = " b)
+(print "c = " c)
+
+; Equality and inequality
+(print "a == c: " (= a c))
+(print "a == b: " (= a b))
+(print "a != b: " (!= a b))
+(print "a != c: " (!= a c))
+
+; Less than and greater than
+(print "a < b: " (< a b))
+(print "b < a: " (< b a))
+(print "a > b: " (> a b))
+(print "b > a: " (> b a))
+
+; Less than or equal, greater than or equal
+(print "a <= c: " (<= a c))
+(print "a <= b: " (<= a b))
+(print "a >= c: " (>= a c))
+(print "b >= a: " (>= b a))
+
+; Conditional logic with comparisons
+(print "Conditional tests:")
+(if (> a b)
+    (print "a is greater than b")
+    (print "a is not greater than b"))
+
+(if (= a c)
+    (print "a equals c")
+    (print "a does not equal c"))
+
+(if (<= b a)
+    (print "b is less than or equal to a")
+    (print "b is greater than a")) 

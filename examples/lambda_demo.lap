@@ -1,0 +1,23 @@
+; Lambda expressions demo
+; Shows anonymous functions and lambda definitions
+
+(print "Lambda expressions demo:")
+
+; Anonymous function application
+(print "((lambda (x) (* x x)) 5) = " ((lambda (x) (* x x)) 5))
+
+; Define functions using lambda
+(define square (lambda (x) (* x x)))
+(define cube (lambda (x) (* x x x)))
+(define add (lambda (x y) (+ x y)))
+(define multiply (lambda (x y) (* x y)))
+
+(print "square(4) = " (square 4))
+(print "cube(3) = " (cube 3))
+(print "add(10, 20) = " (add 10 20))
+(print "multiply(6, 7) = " (multiply 6 7))
+
+; Simple lambda with conditional
+(define abs (lambda (x) (if (< x 0) (- x) x)))
+(print "abs(-5) = " (abs -5))
+(print "abs(3) = " (abs 3)) 

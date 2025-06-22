@@ -88,12 +88,31 @@ odin run .
 
 This runs the test suite showing tokenization, parsing, and evaluation for each example.
 
+## Example Programs
+
+A collection of example LAP programs is available in the [`examples/`](examples/) folder. These cover:
+
+- Arithmetic and expressions
+- Function and lambda usage
+- Recursion (factorial, Fibonacci)
+- Comparison and conditionals
+- Output formatting
+
+To run an example program:
+
+```bash
+odin run . -- examples/filename.lap
+```
+
+See [`examples/README.md`](examples/README.md) for details on each demo.
+
 ## Project Files
 
 - `main.odin` - Test cases and main program
 - `tokenizer.odin` - Breaks input into tokens
 - `parser.odin` - Builds AST from tokens
 - `evaluator.odin` - Evaluates AST and manages environment
+- `examples/` - Example LAP programs and demos
 
 ## License
 
