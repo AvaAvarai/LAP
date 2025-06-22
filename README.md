@@ -1,6 +1,6 @@
 # LAP: Lisp-like Applied Processor
 
-A Lisp interpreter written in Odin that supports arithmetic, functions, lambda expressions, conditionals, and more.
+A Lisp interpreter written in Odin that supports arithmetic, functions, lambda expressions, closures, conditionals, and more.
 
 ## What LAP Does
 
@@ -38,6 +38,15 @@ LAP takes Lisp-like expressions and evaluates them. It processes code through th
 
 ; Anonymous lambdas
 ((lambda (x y) (+ x y)) 3 4)  ; => 7.000
+```
+
+### Closures & Higher-Order Functions
+
+```lisp
+; Closures and higher-order functions
+(define make-adder (lambda (n) (lambda (x) (+ x n))))
+(define add5 (make-adder 5))
+(add5 3)                   ; => 8.000
 ```
 
 ### Conditionals
@@ -94,6 +103,7 @@ A collection of example LAP programs is available in the [`examples/`](examples/
 
 - Arithmetic and expressions
 - Function and lambda usage
+- Closures and higher-order functions
 - Recursion (factorial, Fibonacci)
 - Comparison and conditionals
 - Output formatting

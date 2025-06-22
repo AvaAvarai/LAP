@@ -25,7 +25,10 @@ Value :: struct {
     string: string,
 }
 
-Env :: map[string]Value
+Env :: struct {
+    table: map[string]Value,
+    parent: ^Env,
+}
 
 // Helper function to create error values and reduce redundancy
 make_error :: proc(message: string) -> Value {
@@ -55,12 +58,15 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
             return Value{kind = Value_Kind.String, string = expr.value};
         }
 
-        // Otherwise: symbol lookup
-        if val, exists := env[expr.value]; exists {
-            return val;
-        } else {
-            return make_error(fmt.tprintf("Unbound symbol: %s", expr.value));
+        // Otherwise: symbol lookup (walk up parent chain)
+        e := env;
+        for e != nil {
+            if val, exists := e.table[expr.value]; exists {
+                return val;
+            }
+            e = e.parent;
         }
+        return make_error(fmt.tprintf("Unbound symbol: %s", expr.value));
 
     case Expr_Kind.List:
         if len(expr.children) == 0 {
@@ -80,7 +86,7 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
             if args[0].kind == Expr_Kind.Atom {
                 name := args[0].value;
                 val := eval(args[1], env);
-                env[name] = val;
+                env.table[name] = val;
                 return val;
             }
             
@@ -101,7 +107,7 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
                     lambda_body = []Expr{args[1]},
                     lambda_env = env,
                 };
-                env[name] = lambda;
+                env.table[name] = lambda;
                 return lambda;
             }
             
@@ -146,7 +152,7 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
                 kind = Value_Kind.Lambda,
                 lambda_params = params[:],
                 lambda_body = args[1:],
-                lambda_env = env,
+                lambda_env = deep_copy_env(env),
             };
         }
 
@@ -197,17 +203,12 @@ apply_lambda :: proc(lambda: Value, args: []Value) -> Value {
         return make_error(fmt.tprintf("Lambda expects %d arguments, got %d", len(lambda.lambda_params), len(args)));
     }
     
-    // New environment for lambda execution
-    new_env := make(Env);
-    
-    // Copy parent environment
-    for key, value in lambda.lambda_env {
-        new_env[key] = value;
-    }
+    // New environment for lambda execution, chained to closure
+    new_env := Env{table = make(map[string]Value), parent = lambda.lambda_env};
     
     // Bind parameters
     for param, i in lambda.lambda_params {
-        new_env[param] = args[i];
+        new_env.table[param] = args[i];
     }
     
     // Evaluate lambda body
@@ -220,7 +221,7 @@ apply_lambda :: proc(lambda: Value, args: []Value) -> Value {
 }
 
 make_global_env :: proc() -> Env {
-    env := make(Env);
+    env := Env{table = make(map[string]Value), parent = nil};
 
     add_proc :: proc(args: []Value) -> Value {
         sum := 0.0;
@@ -367,16 +368,30 @@ make_global_env :: proc() -> Env {
         return Value{kind = Value_Kind.Number, number = 0};
     };
 
-    env["+"] = Value{kind = Value_Kind.Proc, procedure = add_proc};
-    env["*"] = Value{kind = Value_Kind.Proc, procedure = mul_proc};
-    env["-"] = Value{kind = Value_Kind.Proc, procedure = sub_proc};
-    env["="] = Value{kind = Value_Kind.Proc, procedure = eq_proc};
-    env["<"] = Value{kind = Value_Kind.Proc, procedure = lt_proc};
-    env[">"] = Value{kind = Value_Kind.Proc, procedure = gt_proc};
-    env["<="] = Value{kind = Value_Kind.Proc, procedure = lte_proc};
-    env[">="] = Value{kind = Value_Kind.Proc, procedure = gte_proc};
-    env["!="] = Value{kind = Value_Kind.Proc, procedure = ne_proc};
-    env["print"] = Value{kind = Value_Kind.Proc, procedure = print_proc};
+    env.table["+"] = Value{kind = Value_Kind.Proc, procedure = add_proc};
+    env.table["*"] = Value{kind = Value_Kind.Proc, procedure = mul_proc};
+    env.table["-"] = Value{kind = Value_Kind.Proc, procedure = sub_proc};
+    env.table["="] = Value{kind = Value_Kind.Proc, procedure = eq_proc};
+    env.table["<"] = Value{kind = Value_Kind.Proc, procedure = lt_proc};
+    env.table[">"] = Value{kind = Value_Kind.Proc, procedure = gt_proc};
+    env.table["<="] = Value{kind = Value_Kind.Proc, procedure = lte_proc};
+    env.table[">="] = Value{kind = Value_Kind.Proc, procedure = gte_proc};
+    env.table["!="] = Value{kind = Value_Kind.Proc, procedure = ne_proc};
+    env.table["print"] = Value{kind = Value_Kind.Proc, procedure = print_proc};
 
     return env;
+}
+
+// Deep copy the environment chain for closures
+deep_copy_env :: proc(env: ^Env) -> ^Env {
+    if env == nil {
+        return nil;
+    }
+    new_env := new(Env);
+    new_env.table = make(map[string]Value);
+    for k, v in env.table {
+        new_env.table[k] = v;
+    }
+    new_env.parent = deep_copy_env(env.parent);
+    return new_env;
 }

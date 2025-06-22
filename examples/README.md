@@ -39,6 +39,14 @@ Advanced lambda expression examples:
 - Higher-order functions (functions that return functions)
 - Nested lambda expressions
 
+### `closure_demo.lap`
+
+**Closures and higher-order functions:**
+
+- Functions that return functions
+- Capturing variables from outer scopes
+- Function composition, currying, and more
+
 ### `comparison_demo.lap`
 
 Comprehensive comparison operator examples:
@@ -69,7 +77,7 @@ For example:
 
 ```bash
 odin run . -- examples/fibonacci.lap
-odin run . -- examples/lambda_demo.lap
+odin run . -- examples/closure_demo.lap
 ```
 
 ## Features Demonstrated
@@ -78,6 +86,8 @@ odin run . -- examples/lambda_demo.lap
 - **Comments**: Lines starting with `;` are ignored
 - **Function Definitions**: Both `(define (name params) body)` and `(define name (lambda (params) body))` syntax
 - **Lambda Expressions**: Anonymous functions and closures
+- **Closures**: Functions capturing variables from their defining environment
+- **Higher-Order Functions**: Functions that return or accept other functions
 - **Recursion**: Self-referential function calls
 - **Conditional Logic**: `if` statements with boolean expressions
 - **Arithmetic**: All basic arithmetic operations
