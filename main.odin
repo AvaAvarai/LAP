@@ -33,6 +33,14 @@ main :: proc() {
         for expr in exprs {
             fmt.printf("%s\n", pretty_print_expr(expr));
         }
+        
+        env := make_global_env();
+        for expr in exprs {
+            val := eval(expr, &env);
+            if val.kind == Value_Kind.Number {
+                fmt.printf("=> %f\n", val.number);
+            }
+        }
         fmt.println();
     }
 }
