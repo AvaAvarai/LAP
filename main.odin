@@ -3,33 +3,44 @@ package main
 import "core:fmt"
 
 main :: proc() {
-    // Test cases for tokenizer
+    // Test cases organized by functionality
     test_cases := []string{
-        "(define x (+ 1 2))",
+        // Basic arithmetic and expressions
         "(+ (* 3 4) (- 10 5))",
-        "(define factorial (lambda (n) (if (= n 0) 1 (* n (factorial (- n 1))))))",
         "42",
-        "hello",
+        
+        // Variable definitions
+        "(define x (+ 1 2))",
+        "(define result (+ 5 3))",
+        
+        // Function definitions
         "(define (square x) (* x x))",
-        // Lambda test cases
+        
+        // Lambda expressions
         "((lambda (x) (* x x)) 5)",
         "(define double (lambda (x) (+ x x)))",
         "(double 7)",
         "(define add (lambda (x y) (+ x y)))",
         "(add 3 4)",
+        
+        // Complex recursive function
+        "(define factorial (lambda (n) (if (= n 0) 1 (* n (factorial (- n 1))))))",
+        
         // Print function tests
         "(print 42)",
         "(print (+ 1 2 3))",
         "(print #t #f)",
-        "(define result (+ 5 3))",
         "(print result)",
-        // Comparison operator tests
+        
+        // Comparison operators (one test each)
         "(print (< 3 5))",
         "(print (> 10 5))",
         "(print (<= 5 5))",
         "(print (>= 7 3))",
         "(print (!= 4 4))",
         "(print (= 4 4))",
+        
+        // Conditional logic
         "(if (< 3 5) (print \"3 is less than 5\") (print \"error\"))",
         "(if (> 2 8) (print \"error\") (print \"2 is not greater than 8\"))",
     };

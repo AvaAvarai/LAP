@@ -15,6 +15,12 @@ Expr :: struct {
     token_kind: Token_Kind, // Preserve original token kind
 }
 
+// Helper function to create error expressions
+make_error_expr :: proc(message: string) -> (Expr, int) {
+    fmt.println(message);
+    return Expr{kind = Expr_Kind.Atom, value = "ERROR", token_kind = Token_Kind.Symbol}, 0;
+}
+
 parse_exprs :: proc(tokens: []Token) -> ([]Expr, int) {
     exprs: [dynamic]Expr;
     i := 0;
@@ -46,8 +52,7 @@ parse_expr :: proc(tokens: []Token) -> (Expr, int) {
         }
 
         if i >= len(tokens) || tokens[i].kind != Token_Kind.Paren_Right {
-            fmt.println("Error: unmatched '('");
-            return Expr{kind = Expr_Kind.Atom, value = "ERROR", token_kind = Token_Kind.Symbol}, len(tokens);
+            return make_error_expr("Error: unmatched '('");
         }
 
         return Expr{kind = Expr_Kind.List, children = children[:], token_kind = Token_Kind.Symbol}, i + 1;

@@ -27,6 +27,12 @@ Value :: struct {
 
 Env :: map[string]Value
 
+// Helper function to create error values and reduce redundancy
+make_error :: proc(message: string) -> Value {
+    fmt.println(message);
+    return Value{kind = Value_Kind.Number, number = 0};
+}
+
 eval :: proc(expr: Expr, env: ^Env) -> Value {
     switch expr.kind {
     case Expr_Kind.Atom:
@@ -44,12 +50,7 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
             return Value{kind = Value_Kind.Bool, boolean = false};
         }
 
-        // Handle string literals
-        if len(expr.value) > 0 && expr.value[0] == '"' {
-            return Value{kind = Value_Kind.String, string = expr.value[1:len(expr.value)-1]};
-        }
-
-        // Handle string tokens (from tokenizer)
+        // Handle string literals (consolidated approach)
         if expr.token_kind == Token_Kind.String {
             return Value{kind = Value_Kind.String, string = expr.value};
         }
@@ -58,8 +59,7 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
         if val, exists := env[expr.value]; exists {
             return val;
         } else {
-            fmt.printf("Unbound symbol: %s\n", expr.value);
-            return Value{kind = Value_Kind.Number, number = 0};
+            return make_error(fmt.tprintf("Unbound symbol: %s", expr.value));
         }
 
     case Expr_Kind.List:
@@ -73,8 +73,7 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
         // Special form: define
         if head.kind == Expr_Kind.Atom && head.value == "define" {
             if len(args) != 2 {
-                fmt.println("Invalid define syntax: need exactly 2 arguments");
-                return Value{kind = Value_Kind.Number, number = 0};
+                return make_error("Invalid define syntax: need exactly 2 arguments");
             }
             
             // Handle (define name value) syntax
@@ -97,15 +96,13 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
                 return Value{kind = Value_Kind.Number, number = 0};
             }
             
-            fmt.println("Invalid define syntax");
-            return Value{kind = Value_Kind.Number, number = 0};
+            return make_error("Invalid define syntax");
         }
 
         // Special form: if
         if head.kind == Expr_Kind.Atom && head.value == "if" {
             if len(args) != 3 {
-                fmt.println("Invalid if syntax: need condition, then, else");
-                return Value{kind = Value_Kind.Number, number = 0};
+                return make_error("Invalid if syntax: need condition, then, else");
             }
             
             condition := eval(args[0], env);
@@ -119,21 +116,18 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
         // Special form: lambda
         if head.kind == Expr_Kind.Atom && head.value == "lambda" {
             if len(args) != 2 {
-                fmt.println("Invalid lambda syntax: need parameters and body");
-                return Value{kind = Value_Kind.Number, number = 0};
+                return make_error("Invalid lambda syntax: need parameters and body");
             }
             
             // Extract parameters
             if args[0].kind != Expr_Kind.List {
-                fmt.println("Lambda parameters must be a list");
-                return Value{kind = Value_Kind.Number, number = 0};
+                return make_error("Lambda parameters must be a list");
             }
             
             params: [dynamic]string;
             for param in args[0].children {
                 if param.kind != Expr_Kind.Atom {
-                    fmt.println("Lambda parameters must be symbols");
-                    return Value{kind = Value_Kind.Number, number = 0};
+                    return make_error("Lambda parameters must be symbols");
                 }
                 append(&params, param.value);
             }
@@ -150,8 +144,7 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
         // Evaluate head to get function
         fn_val := eval(head, env);
         if fn_val.kind != Value_Kind.Proc && fn_val.kind != Value_Kind.Lambda {
-            fmt.printf("Head of list is not a function: %v\n", head.value);
-            return Value{kind = Value_Kind.Number, number = 0};
+            return make_error(fmt.tprintf("Head of list is not a function: %v", head.value));
         }
 
         // Evaluate arguments
@@ -192,8 +185,7 @@ is_truthy :: proc(val: Value) -> bool {
 
 apply_lambda :: proc(lambda: Value, args: []Value) -> Value {
     if len(args) != len(lambda.lambda_params) {
-        fmt.printf("Lambda expects %d arguments, got %d\n", len(lambda.lambda_params), len(args));
-        return Value{kind = Value_Kind.Number, number = 0};
+        return make_error(fmt.tprintf("Lambda expects %d arguments, got %d", len(lambda.lambda_params), len(args)));
     }
     
     // New environment for lambda execution
@@ -256,6 +248,7 @@ make_global_env :: proc() -> Env {
         return Value{kind = Value_Kind.Number, number = result};
     };
 
+    // Individual comparison functions to avoid closure issues
     eq_proc :: proc(args: []Value) -> Value {
         if len(args) != 2 {
             return Value{kind = Value_Kind.Bool, boolean = false};
