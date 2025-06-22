@@ -76,7 +76,7 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
                 return make_error("Invalid define syntax: need exactly 2 arguments");
             }
             
-            // Handle (define name value) syntax
+            // (define name value)
             if args[0].kind == Expr_Kind.Atom {
                 name := args[0].value;
                 val := eval(args[1], env);
@@ -84,16 +84,25 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
                 return val;
             }
             
-            // Handle (define (name params) body) syntax
+            // (define (name params...) body)
             if args[0].kind == Expr_Kind.List && len(args[0].children) > 0 {
                 name := args[0].children[0].value;
-                // Store function body as list
-                body_values: [dynamic]Value;
-                for arg in args[1:] {
-                    append(&body_values, eval(arg, env));
+                params: [dynamic]string;
+                for param in args[0].children[1:] {
+                    if param.kind != Expr_Kind.Atom {
+                        return make_error("Function parameters must be symbols");
+                    }
+                    append(&params, param.value);
                 }
-                env[name] = Value{kind = Value_Kind.List, list = body_values[:]};
-                return Value{kind = Value_Kind.Number, number = 0};
+                // The function body is args[1]
+                lambda := Value{
+                    kind = Value_Kind.Lambda,
+                    lambda_params = params[:],
+                    lambda_body = []Expr{args[1]},
+                    lambda_env = env,
+                };
+                env[name] = lambda;
+                return lambda;
             }
             
             return make_error("Invalid define syntax");
@@ -343,9 +352,7 @@ make_global_env :: proc() -> Env {
                     if j > 0 {
                         fmt.print(" ");
                     }
-                    // Recursively print list elements
-                    temp_val := Value{kind = Value_Kind.List, list = []Value{child}};
-                    print_proc([]Value{temp_val});
+                    print_proc([]Value{child});
                 }
                 fmt.print(")");
             case Value_Kind.Proc:
