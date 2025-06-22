@@ -23,6 +23,12 @@ main :: proc() {
         for token, j in tokens {
             fmt.printf("  %d: Kind: %v, Value: '%s'\n", j, token.kind, token.value);
         }
+        
+        fmt.printf("AST:\n");
+        exprs, _ := parse_exprs(tokens);
+        for expr in exprs {
+            print_expr(expr, 1);
+        }
         fmt.println();
     }
 }
