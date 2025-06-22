@@ -11,7 +11,7 @@ main :: proc() {
         "42",
         "hello",
         "(define (square x) (* x x))",
-        // New lambda test cases
+        // Lambda test cases
         "((lambda (x) (* x x)) 5)",
         "(define double (lambda (x) (+ x x)))",
         "(double 7)",

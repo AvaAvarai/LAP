@@ -23,7 +23,7 @@ is_symbol_char :: proc(c: rune) -> bool {
 }
 
 tokenize :: proc(src: string) -> []Token {
-    tokens: [dynamic]Token; // Use dynamic array instead of slice
+    tokens: [dynamic]Token; // Dynamic array for token collection
 
     i := 0;
     for i < len(src) {
@@ -65,5 +65,5 @@ tokenize :: proc(src: string) -> []Token {
         i += 1;
     }
 
-    return tokens[:]; // Convert dynamic array to slice
+    return tokens[:]; // Convert to slice
 }

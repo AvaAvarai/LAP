@@ -82,7 +82,7 @@ pretty_print_expr_indented :: proc(expr: Expr, indent: int) -> string {
             return "()";
         }
         
-        // Check if this should be formatted on multiple lines
+        // Determine multiline formatting
         should_multiline := should_format_multiline(expr);
         
         if should_multiline {
@@ -119,7 +119,7 @@ should_format_multiline :: proc(expr: Expr) -> bool {
         return false;
     }
     
-    // Format multiline if:
+    // Multiline conditions:
     // 1. Has more than 3 children, or
     // 2. Any child is a list with children, or
     // 3. Total length would be too long
@@ -136,5 +136,5 @@ should_format_multiline :: proc(expr: Expr) -> bool {
         total_length += len(child.value) + 1; // +1 for space
     }
     
-    return total_length > 80; // Arbitrary line length limit
+    return total_length > 80; // Line length threshold
 }

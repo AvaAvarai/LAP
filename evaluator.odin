@@ -76,7 +76,7 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
             // Handle (define (name params) body) syntax
             if args[0].kind == Expr_Kind.List && len(args[0].children) > 0 {
                 name := args[0].children[0].value;
-                // For now, just store the body as a list - proper lambda implementation would be more complex
+                // Store function body as list
                 body_values: [dynamic]Value;
                 for arg in args[1:] {
                     append(&body_values, eval(arg, env));
@@ -168,9 +168,9 @@ is_truthy :: proc(val: Value) -> bool {
     case Value_Kind.List:
         return len(val.list) > 0;
     case Value_Kind.Proc:
-        return true; // Procedures are always truthy
+        return true; // Functions are truthy
     case Value_Kind.Lambda:
-        return true; // Lambdas are always truthy
+        return true; // Lambdas are truthy
     case:
         return false;
     }
@@ -182,10 +182,10 @@ apply_lambda :: proc(lambda: Value, args: []Value) -> Value {
         return Value{kind = Value_Kind.Number, number = 0};
     }
     
-    // Create new environment with closure
+    // New environment for lambda execution
     new_env := make(Env);
     
-    // Copy closure environment
+    // Copy parent environment
     for key, value in lambda.lambda_env {
         new_env[key] = value;
     }
