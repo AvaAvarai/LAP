@@ -146,16 +146,98 @@ The REPL supports:
 # Interactive mode
 odin run . -- examples/repl.lap
 > (+ 2 3)
-5.000
+5
 > (print "Hello, LAP!")
 "Hello, LAP!"
-0.000
+0
 > quit
 Goodbye!
 
 # Piped input mode
 echo "(+ 2 3)" | odin run . -- examples/repl.lap
 echo '(print "Hello, World!")' | odin run . -- examples/repl.lap
+```
+
+## Building LAP
+
+### Prerequisites
+
+Before building LAP, ensure you have the [Odin compiler](https://odin-lang.org/docs/install/) installed on your system.
+
+### Building to Binary
+
+The simplest way to build LAP is:
+
+```bash
+odin build .
+```
+
+This will produce `LAP.exe` on Windows, or `lap` on Linux/macOS, in the current directory.
+
+To customize the output name or build for other platforms, see below:
+
+```bash
+# Build debug version
+odin build . -out:lap
+
+# Build optimized release version
+odin build . -out:lap -opt:3
+
+# Build for specific platform
+odin build . -out:lap -target:windows_amd64
+odin build . -out:lap -target:linux_amd64
+odin build . -out:lap -target:darwin_amd64
+```
+
+### Using the Binary
+
+Once built, you can use the `lap` executable directly:
+
+```bash
+# Run test suite
+./lap
+
+# Run a specific example file
+./lap examples/factorial.lap
+
+# Start the REPL
+./lap examples/repl.lap
+
+# Process input from pipe
+echo "(+ 2 3)" | ./lap examples/repl.lap
+```
+
+### Build Options
+
+Additional build options for customization:
+
+```bash
+# Build with debug symbols
+odin build . -out:lap -debug
+
+# Build with specific optimization level (0-3)
+odin build . -out:lap -opt:2
+
+# Build with custom output name
+odin build . -out:my-lap-interpreter
+
+# Build with additional compiler flags
+odin build . -out:lap -extra-linker-flags:"-static"
+```
+
+### Cross-Compilation
+
+LAP can be cross-compiled for different platforms:
+
+```bash
+# Build for Windows from Linux/macOS
+odin build . -out:lap.exe -target:windows_amd64
+
+# Build for Linux from Windows
+odin build . -out:lap -target:linux_amd64
+
+# Build for macOS from Linux
+odin build . -out:lap -target:darwin_amd64
 ```
 
 ## Example Programs
