@@ -2,6 +2,8 @@
 
 This directory contains example programs demonstrating LAP's capabilities.
 
+All static examples can be ran in batch with **`static_example_runner.lap`**.
+
 ## Basic Examples
 
 - **`basic.lap`** - Basic arithmetic, functions, conditionals, and comparisons
@@ -143,16 +145,19 @@ Both REPLs support **multiline expressions** - you can split complex expressions
 ## Recent Fixes and Improvements
 
 ### Parser Improvements
+
 - **Fixed infinite loop prevention** - parser now properly handles unmatched parentheses
 - **Better error recovery** - continues parsing after encountering errors
 - **Robust token consumption** - prevents cascading parse errors
 
 ### Evaluator Enhancements
+
 - **Persistent eval environment** - `eval` function now maintains state between calls
 - **Enhanced read-line** - built-in multiline support with continuation prompts
 - **Output control** - separate `print` and `println` functions for better formatting
 
 ### REPL Improvements
+
 - **Clean prompt display** - no unwanted newlines after prompts
 - **Proper multiline handling** - complex expressions work correctly
 - **Persistent function definitions** - functions defined in one expression are available in subsequent expressions

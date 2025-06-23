@@ -1,0 +1,29 @@
+(print "=== LAP Test Runner ===")
+(print "Running test files...")
+
+; Explicitly call load for each known test file
+(println "Running: basic.lap")
+(load "examples/basic.lap")
+
+(println "Running: factorial.lap")
+(load "examples/factorial.lap")
+
+(println "Running: fibonacci.lap")
+(load "examples/fibonacci.lap")
+
+(println "Running: lambda_demo.lap")
+(load "examples/lambda_demo.lap")
+
+(println "Running: closure_demo.lap")
+(load "examples/closure_demo.lap")
+
+(println "Running: comparison_demo.lap")
+(load "examples/comparison_demo.lap")
+
+(println "Running: arithmetic_demo.lap")
+(load "examples/arithmetic_demo.lap")
+
+(println "Running: bootstrap_test.lap")
+(load "examples/bootstrap_test.lap")
+
+(print "All test files loaded. If no errors above, tests passed.")
