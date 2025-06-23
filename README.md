@@ -72,10 +72,11 @@ LAP takes Lisp-like expressions and evaluates them. It processes code through th
 ### Output
 
 ```lisp
-; Print function
-(print 42)                 ; => 42
+; Print functions
+(print 42)                 ; => 42 (no newline)
+(println 42)               ; => 42 (with newline)
 (print "Hello")            ; => "Hello"
-(print #t #f)              ; => #t #f
+(println #t #f)            ; => #t #f
 ```
 
 ### Multiline Input Support
@@ -111,10 +112,10 @@ LAP includes core functions that enable **self-hosting** - building more complex
 ; Read input from stdin (supports multiline)
 (read)                     ; => user input as string
 
-; Read single line input
+; Read single line input (with multiline support)
 (read-line)                ; => single line as string
 
-; Evaluate strings as LAP code
+; Evaluate strings as LAP code (with persistent environment)
 (eval "(+ 5 3)")           ; => 8
 
 ; Load and execute files
@@ -168,7 +169,7 @@ LAP includes **two REPL implementations**:
 # Start the built-in REPL with multiline support
 lap.exe --repl
 # or
-odin run . -repl
+odin run . --repl
 ```
 
 Features:
@@ -189,8 +190,9 @@ odin run . -- examples/repl.lap
 Features:
 
 - **100% written in LAP** - demonstrates bootstrapping capabilities
-- **Custom multiline logic** - implements its own parentheses balancing
-- **Built-in commands** - `help`, `load`, `quit`
+- **Persistent environment** - function definitions persist between expressions
+- **Clean prompt** - `> ` without unwanted newlines
+- **Proper multiline support** - handles complex nested expressions
 - **Educational** - shows how to build complex functionality in LAP itself
 
 #### REPL Examples
@@ -208,16 +210,18 @@ lap.exe --repl
 
 # Self-hosted REPL
 lap.exe examples/repl.lap
-lap> (define x 42)
-lap> (print x)
-42
-lap> help
-Available commands:
-  quit - exit the REPL
-  help - show this help
-  load <file> - load and execute a file
-  Any LAP expression - evaluate it
-lap> quit
+=== LAP REPL (multiline) ===
+Type expressions to evaluate
+Type 'quit' to exit
+Type 'help' for help
+> (define (factorial n)
+    (if (= n 0)
+        1
+        (* n (factorial (- n 1)))))
+Expression evaluated successfully
+> (factorial 10)
+3628800
+> quit
 Goodbye!
 ```
 
@@ -351,6 +355,7 @@ This foundation makes LAP suitable for:
 - **Lexical scoping** with proper closure support
 - **Environment chaining** for variable lookup
 - **Proper parent environment references** (not deep copying)
+- **Persistent global environment** for `eval` function
 
 ### Input Processing
 
@@ -358,19 +363,27 @@ This foundation makes LAP suitable for:
 - **Comment filtering** (lines starting with `;`)
 - **Blank line removal** for clean execution
 - **Multiline input support** with automatic parentheses balancing
+- **Enhanced read-line** with built-in multiline support
 
 ### Error Handling
 
 - **Graceful error reporting** for unbound symbols
 - **Robust parsing** with proper tokenization
 - **Clean exit** on EOF or quit commands
+- **Fixed infinite loop prevention** in parser
+
+### Output Control
+
+- **`print`** - Output without newline (for prompts)
+- **`println`** - Output with newline (for messages and results)
+- **Clean prompt display** without unwanted newlines
 
 ## Project Files
 
 - `main.odin` - Main program entry point and test runner
 - `tokenizer.odin` - Breaks input into tokens
-- `parser.odin` - Builds AST from tokens
-- `evaluator.odin` - Evaluates AST and manages environment
+- `parser.odin` - Builds AST from tokens (with infinite loop fixes)
+- `evaluator.odin` - Evaluates AST and manages environment (with persistent eval environment)
 - `examples/` - Example LAP programs and demos
 
 ## License

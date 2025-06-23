@@ -29,6 +29,11 @@ parse_exprs :: proc(tokens: []Token) -> ([]Expr, int) {
         expr, consumed := parse_expr(tokens[i:]);
         append(&exprs, expr);
         i += consumed;
+        
+        // If we consumed 0 tokens due to an error, advance by 1 to prevent infinite loop
+        if consumed == 0 {
+            i += 1;
+        }
     }
 
     return exprs[:], i;
@@ -49,10 +54,17 @@ parse_expr :: proc(tokens: []Token) -> (Expr, int) {
             child, consumed := parse_expr(tokens[i:]);
             append(&children, child);
             i += consumed;
+            
+            // If we consumed 0 tokens due to an error, advance by 1 to prevent infinite loop
+            if consumed == 0 {
+                i += 1;
+            }
         }
 
         if i >= len(tokens) || tokens[i].kind != Token_Kind.Paren_Right {
-            return make_error_expr("Error: unmatched '('");
+            // Consume all remaining tokens to prevent cascading errors
+            error_expr, _ := make_error_expr("Error: unmatched '('");
+            return error_expr, len(tokens);
         }
 
         return Expr{kind = Expr_Kind.List, children = children[:], token_kind = Token_Kind.Symbol}, i + 1;

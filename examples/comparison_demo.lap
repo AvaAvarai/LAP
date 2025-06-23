@@ -1,45 +1,45 @@
 ; Comparison operators demo
 ; Shows all comparison operators and conditional logic
 
-(print "Comparison operators demo:")
+(println "Comparison operators demo:")
 
 ; Define some test values
 (define a 10)
 (define b 5)
 (define c 10)
 
-(print "a = " a)
-(print "b = " b)
-(print "c = " c)
+(println "a = " a)
+(println "b = " b)
+(println "c = " c)
 
 ; Equality and inequality
-(print "a == c: " (= a c))
-(print "a == b: " (= a b))
-(print "a != b: " (!= a b))
-(print "a != c: " (!= a c))
+(println "a == c: " (= a c))
+(println "a == b: " (= a b))
+(println "a != b: " (!= a b))
+(println "a != c: " (!= a c))
 
 ; Less than and greater than
-(print "a < b: " (< a b))
-(print "b < a: " (< b a))
-(print "a > b: " (> a b))
-(print "b > a: " (> b a))
+(println "a < b: " (< a b))
+(println "b < a: " (< b a))
+(println "a > b: " (> a b))
+(println "b > a: " (> b a))
 
 ; Less than or equal, greater than or equal
-(print "a <= c: " (<= a c))
-(print "a <= b: " (<= a b))
-(print "a >= c: " (>= a c))
-(print "b >= a: " (>= b a))
+(println "a <= c: " (<= a c))
+(println "a <= b: " (<= a b))
+(println "a >= c: " (>= a c))
+(println "b >= a: " (>= b a))
 
 ; Conditional logic with comparisons
-(print "Conditional tests:")
+(println "Conditional tests:")
 (if (> a b)
-    (print "a is greater than b")
-    (print "a is not greater than b"))
+    (println "a is greater than b")
+    (println "a is not greater than b"))
 
 (if (= a c)
-    (print "a equals c")
-    (print "a does not equal c"))
+    (println "a equals c")
+    (println "a does not equal c"))
 
 (if (<= b a)
-    (print "b is less than or equal to a")
-    (print "b is greater than a"))
+    (println "b is less than or equal to a")
+    (println "b is greater than a"))

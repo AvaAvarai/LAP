@@ -1,45 +1,45 @@
 ; Arithmetic operations demo
 ; Shows all arithmetic operators and complex expressions
 
-(print "Arithmetic operations demo:")
+(println "Arithmetic operations demo:")
 
 ; Basic arithmetic
 (define x 15)
 (define y 3)
 (define z 7)
 
-(print "x = " x)
-(print "y = " y)
-(print "z = " z)
+(println "x=" x)
+(println "y=" y)
+(println "z=" z)
 
 ; Addition
-(print "x + y = " (+ x y))
-(print "x + y + z = " (+ x y z))
+(println "x+y=" (+ x y))
+(println "x+y+z=" (+ x y z))
 
 ; Subtraction
-(print "x - y = " (- x y))
-(print "y - x = " (- y x))
-(print "x - y - z = " (- x y z))
+(println "x-y=" (- x y))
+(println "y-x=" (- y x))
+(println "x-y-z=" (- x y z))
 
 ; Multiplication
-(print "x * y = " (* x y))
-(print "x * y * z = " (* x y z))
+(println "x*y=" (* x y))
+(println "x*y*z=" (* x y z))
 
 ; Complex expressions
-(print "Complex expressions:")
-(print "(x + y) * z = " (* (+ x y) z))
-(print "(x - y) + (z * 2) = " (+ (- x y) (* z 2)))
-(print "x * y - z = " (- (* x y) z))
+(println "Complex expressions:")
+(println "(x+y)*z=" (* (+ x y) z))
+(println "(x-y)+(z*2)=" (+ (- x y) (* z 2)))
+(println "x*y-z=" (- (* x y) z))
 
 ; Order of operations
-(print "Order of operations:")
-(print "2 + 3 * 4 = " (+ 2 (* 3 4)))
-(print "(2 + 3) * 4 = " (* (+ 2 3) 4))
-(print "10 - 3 - 2 = " (- (- 10 3) 2))
-(print "10 - (3 - 2) = " (- 10 (- 3 2)))
+(println "Order of operations:")
+(println "2+3*4=" (+ 2 (* 3 4)))
+(println "(2+3)*4=" (* (+ 2 3) 4))
+(println "10-3-2=" (- (- 10 3) 2))
+(println "10-(3-2)=" (- 10 (- 3 2)))
 
 ; Negative numbers
-(print "Negative numbers:")
-(print "-5 = " (- 5))
-(print "5 + (-3) = " (+ 5 (- 3)))
-(print "(-2) * (-3) = " (* (- 2) (- 3)))
+(println "Negative numbers:")
+(println "-5=" (- 0 5))
+(println "5+(-3)=" (+ 5 (- 0 3)))
+(println "(-2)*(-3)=" (* (- 0 2) (- 0 3)))

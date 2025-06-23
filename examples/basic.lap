@@ -6,37 +6,34 @@
 (define y 5)
 
 ; Basic arithmetic
-(print "Basic arithmetic:")
-(print (+ x y))
-(print (* x y))
-(print (- x y))
+(println "Basic arithmetic:")
+(println "x + y =" (+ x y))
+(println "x * y =" (* x y))
+(println "x - y =" (- x y))
 
 ; Define a function
 (define (square n) (* n n))
 
 ; Use the function
-(print "Square of 7:")
-(print (square 7))
+(println "Square of 7 =" (square 7))
 
 ; Lambda function
 (define double (lambda (x) (+ x x)))
-(print "Double of 8:")
-(print (double 8))
+(println "Double of 8 =" (double 8))
 
 ; Conditional logic
-(print "Conditional test:")
+(println "Conditional test:")
 (if (> x y) 
-    (print "x is greater than y") 
-    (print "x is not greater than y"))
+    (println "x is greater than y") 
+    (println "x is not greater than y"))
 
 ; Comparison operators
-(print "Comparison tests:")
-(print (< 3 5))
-(print (>= 10 5))
-(print (= 4 4))
-(print (!= 3 7))
+(println "Comparison tests:")
+(println "3 < 5 =" (< 3 5))
+(println "10 >= 5 =" (>= 10 5))
+(println "4 = 4 =" (= 4 4))
+(println "3 != 7 =" (!= 3 7))
 
 ; Complex expression
 (define result (+ (* 2 x) (- y 1)))
-(print "Complex result:")
-(print result)
+(println "Complex result =" result)

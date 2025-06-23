@@ -1,25 +1,25 @@
 ; Test bootstrapping functions
 
-(print "=== Bootstrap Functions Test ===")
+(println "=== Bootstrap Functions Test ===")
 
 ; Test string operations
-(print "String concatenation:")
-(print (concat "Hello" " " "World"))
+(println "String concatenation:")
+(println "concat result =" (concat "Hello" " " "World"))
 
-(print "String equality:")
-(print (str= "test" "test"))
-(print (str= "test" "other"))
+(println "String equality:")
+(println "str= test test =" (str= "test" "test"))
+(println "str= test other =" (str= "test" "other"))
 
 ; Test eval function
-(print "Eval function:")
-(print (eval "(+ 5 3)"))
+(println "Eval function:")
+(println "eval (+ 5 3) =" (eval "(+ 5 3)"))
 
 ; Test begin function
-(print "Begin function:")
-(print (begin 1 2 3))
+(println "Begin function:")
+(println "begin result =" (begin 1 2 3))
 
 ; Test load function
-(print "Load function:")
+(println "Load function:")
 (load "examples/basic.lap")
 
-(print "=== Bootstrap Test Complete ===")
+(println "=== Bootstrap Test Complete ===")

@@ -22,8 +22,8 @@ This directory contains example programs demonstrating LAP's capabilities.
 LAP includes core functions that enable bootstrapping - building more complex functionality in LAP itself:
 
 - **`read`** - Read multiline input from stdin (automatically balances parentheses)
-- **`read-line`** - Read a single line from stdin
-- **`eval`** - Evaluate a string as LAP code
+- **`read-line`** - Read a single line from stdin (with built-in multiline support)
+- **`eval`** - Evaluate a string as LAP code (with persistent environment)
 - **`load`** - Load and execute a file
 - **`concat`** - Concatenate strings
 - **`str=`** - String equality comparison
@@ -32,6 +32,8 @@ LAP includes core functions that enable bootstrapping - building more complex fu
 - **`str-trim`** - Trim whitespace from string
 - **`begin`** - Execute multiple expressions, return last result
 - **`let`** - Local variable bindings
+- **`print`** - Output without newline (for prompts)
+- **`println`** - Output with newline (for messages and results)
 
 ## Running Examples
 
@@ -55,7 +57,7 @@ LAP includes **two REPL implementations**:
 ```bash
 lap.exe --repl
 # or
-odin run . -repl
+odin run . --repl
 ```
 
 **Features:**
@@ -89,25 +91,27 @@ odin run . -- examples/repl.lap
 **Features:**
 
 - **100% written in LAP** - demonstrates bootstrapping capabilities
-- **Custom multiline logic** - implements its own parentheses balancing using `count-parens`
-- **Built-in commands** - `help`, `load`, `quit`
+- **Persistent environment** - function definitions persist between expressions
+- **Clean prompt** - `> ` without unwanted newlines
+- **Proper multiline support** - handles complex nested expressions
 - **Educational** - shows how to build complex functionality in LAP itself
-- **String manipulation** - uses `str-len`, `str-ref`, `str-trim` for input processing
 
 **Example:**
 
 ```bash
 lap.exe examples/repl.lap
-lap> (define x 42)
-lap> (print x)
-42
-lap> help
-Available commands:
-  quit - exit the REPL
-  help - show this help
-  load <file> - load and execute a file
-  Any LAP expression - evaluate it
-lap> quit
+=== LAP REPL (multiline) ===
+Type expressions to evaluate
+Type 'quit' to exit
+Type 'help' for help
+> (define (factorial n)
+    (if (= n 0)
+        1
+        (* n (factorial (- n 1)))))
+Expression evaluated successfully
+> (factorial 10)
+3628800
+> quit
 Goodbye!
 ```
 
@@ -136,6 +140,23 @@ Both REPLs support **multiline expressions** - you can split complex expressions
         (- a b)))))
 ```
 
+## Recent Fixes and Improvements
+
+### Parser Improvements
+- **Fixed infinite loop prevention** - parser now properly handles unmatched parentheses
+- **Better error recovery** - continues parsing after encountering errors
+- **Robust token consumption** - prevents cascading parse errors
+
+### Evaluator Enhancements
+- **Persistent eval environment** - `eval` function now maintains state between calls
+- **Enhanced read-line** - built-in multiline support with continuation prompts
+- **Output control** - separate `print` and `println` functions for better formatting
+
+### REPL Improvements
+- **Clean prompt display** - no unwanted newlines after prompts
+- **Proper multiline handling** - complex expressions work correctly
+- **Persistent function definitions** - functions defined in one expression are available in subsequent expressions
+
 ## Features Demonstrated
 
 - **File Input**: Reading and executing LAP programs from files
@@ -143,6 +164,7 @@ Both REPLs support **multiline expressions** - you can split complex expressions
 - **Multi-line expressions**: Support for complex nested expressions
 - **Environment management**: Proper variable scoping and closure support
 - **Bootstrapping**: Building complex functionality using LAP itself
-- **Interactive development**: Full REPL with help and file loading
+- **Interactive development**: Full REPL with persistent environment
 - **String manipulation**: Character-by-character string processing
 - **Local bindings**: `let` expressions for temporary variable scoping
+- **Output formatting**: Controlled newline behavior with `print` and `println`

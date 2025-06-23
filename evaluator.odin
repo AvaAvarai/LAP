@@ -33,6 +33,9 @@ Env :: struct {
     parent: ^Env,
 }
 
+// Global environment for persistent state across eval calls
+global_eval_env: ^Env;
+
 // Helper function to create error values and reduce redundancy
 make_error :: proc(message: string) -> Value {
     fmt.println(message);
@@ -373,7 +376,6 @@ print_proc :: proc(args: []Value) -> Value {
             fmt.print("unknown");
         }
     }
-    fmt.println();
     return Value{kind = Value_Kind.Number, number = 0};
 }
 
@@ -473,6 +475,49 @@ make_global_env :: proc() -> Env {
         return print_proc(args);
     };
 
+    println_proc :: proc(args: []Value) -> Value {
+        for arg, i in args {
+            if i > 0 {
+                fmt.print(" ");
+            }
+            switch arg.kind {
+            case Value_Kind.Number:
+                // Check if the number is a whole number
+                if arg.number == f64(int(arg.number)) {
+                    fmt.printf("%d", int(arg.number));
+                } else {
+                    // Use %g to automatically remove trailing zeros
+                    fmt.printf("%g", arg.number);
+                }
+            case Value_Kind.Bool:
+                if arg.boolean {
+                    fmt.print("#t");
+                } else {
+                    fmt.print("#f");
+                }
+            case Value_Kind.String:
+                fmt.printf("%s", arg.string);
+            case Value_Kind.List:
+                fmt.print("(");
+                for child, j in arg.list {
+                    if j > 0 {
+                        fmt.print(" ");
+                    }
+                    print_proc([]Value{child});
+                }
+                fmt.print(")");
+            case Value_Kind.Proc:
+                fmt.print("#<procedure>");
+            case Value_Kind.Lambda:
+                fmt.print("#<lambda>");
+            case:
+                fmt.print("unknown");
+            }
+        }
+        fmt.println();
+        return Value{kind = Value_Kind.Number, number = 0};
+    };
+
     read_proc :: proc(args: []Value) -> Value {
         if len(args) != 0 {
             return make_error("read takes no arguments");
@@ -496,6 +541,12 @@ make_global_env :: proc() -> Env {
             return make_error("eval argument must be a string");
         }
         
+        // Initialize global environment if not already done
+        if global_eval_env == nil {
+            global_eval_env = new(Env);
+            global_eval_env^ = make_global_env();
+        }
+        
         // Tokenize and parse the string
         tokens := tokenize(args[0].string);
         if len(tokens) == 0 {
@@ -507,10 +558,10 @@ make_global_env :: proc() -> Env {
             return make_error("Failed to parse expression");
         }
         
-        // Evaluate in the current environment
+        // Evaluate in the global environment
         result := Value{kind = Value_Kind.Number, number = 0};
         for expr in exprs {
-            result = eval(expr, env);
+            result = eval(expr, global_eval_env);
         }
         return result;
     };
@@ -628,23 +679,46 @@ make_global_env :: proc() -> Env {
             return make_error("read-line takes no arguments");
         }
         
-        fmt.print("> ");
-        input: [1024]u8;
-        n, _ := os.read(os.stdin, input[:]);
-        if n == 0 {
-            return Value{kind = Value_Kind.String, string = ""};
+        input_buffer: [dynamic]u8;
+        line_buffer: [1024]u8;
+        
+        for {
+            n, _ := os.read(os.stdin, line_buffer[:]);
+            if n == 0 {
+                break;
+            }
+            
+            // Remove carriage return and newline for Windows compatibility
+            end := n;
+            if end > 0 && line_buffer[end-1] == '\n' {
+                end -= 1;
+            }
+            if end > 0 && line_buffer[end-1] == '\r' {
+                end -= 1;
+            }
+            
+            // Append the line to our buffer
+            for i := 0; i < end; i += 1 {
+                append(&input_buffer, line_buffer[i]);
+            }
+            
+            // Add a space between lines for proper tokenization
+            append(&input_buffer, ' ');
+            
+            current_input := string(input_buffer[:]);
+            
+            // Check if the input is balanced
+            if is_balanced(current_input) {
+                break;
+            }
+            
+            // Show continuation prompt
+            fmt.print("  ");
         }
         
-        // Remove carriage return and newline for Windows compatibility
-        end := n;
-        if end > 0 && input[end-1] == '\n' {
-            end -= 1;
-        }
-        if end > 0 && input[end-1] == '\r' {
-            end -= 1;
-        }
-        
-        return Value{kind = Value_Kind.String, string = string(input[:end])};
+        result := string(input_buffer[:]);
+        delete(input_buffer);
+        return Value{kind = Value_Kind.String, string = result};
     };
 
     env.table["+"] = Value{kind = Value_Kind.Proc, procedure = add_proc};
@@ -658,6 +732,7 @@ make_global_env :: proc() -> Env {
     env.table[">="] = Value{kind = Value_Kind.Proc, procedure = gte_proc};
     env.table["!="] = Value{kind = Value_Kind.Proc, procedure = ne_proc};
     env.table["print"] = Value{kind = Value_Kind.Proc, procedure = print_proc_wrapper};
+    env.table["println"] = Value{kind = Value_Kind.Proc, procedure = println_proc};
     env.table["read"] = Value{kind = Value_Kind.Proc, procedure = read_proc};
     env.table["eval"] = Value{kind = Value_Kind.Proc, procedure_with_env = eval_proc};
     env.table["load"] = Value{kind = Value_Kind.Proc, procedure = load_proc};

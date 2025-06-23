@@ -1,23 +1,23 @@
 ; Closure and nested lambda demo
 ; Shows higher-order functions and lexical scoping
 
-(print "Closure and nested lambda demo:")
+(println "Closure and nested lambda demo:")
 
 ; Basic higher-order function: make-adder
 (define make-adder (lambda (n) (lambda (x) (+ x n))))
 (define add5 (make-adder 5))
 (define add10 (make-adder 10))
 
-(print "add5(3) = " (add5 3))
-(print "add10(7) = " (add10 7))
+(println "add5(3) = " (add5 3))
+(println "add10(7) = " (add10 7))
 
 ; Another higher-order function: make-multiplier
 (define make-multiplier (lambda (factor) (lambda (x) (* x factor))))
 (define double (make-multiplier 2))
 (define triple (make-multiplier 3))
 
-(print "double(4) = " (double 4))
-(print "triple(5) = " (triple 5))
+(println "double(4) = " (double 4))
+(println "triple(5) = " (triple 5))
 
 ; Function composition
 (define compose (lambda (f g) (lambda (x) (f (g x)))))
@@ -25,15 +25,15 @@
 (define add1 (lambda (x) (+ x 1)))
 (define square-then-add1 (compose add1 square))
 
-(print "square-then-add1(3) = " (square-then-add1 3))
+(println "square-then-add1(3) = " (square-then-add1 3))
 
 ; Currying example
 (define curry-add (lambda (x) (lambda (y) (+ x y))))
 (define add3 (curry-add 3))
 (define add7 (curry-add 7))
 
-(print "add3(4) = " (add3 4))
-(print "add7(2) = " (add7 2))
+(println "add3(4) = " (add3 4))
+(println "add7(2) = " (add7 2))
 
 ; Nested closures with multiple parameters
 (define make-pair (lambda (a b) (lambda (selector) (if selector a b))))
@@ -41,8 +41,8 @@
 (define first (lambda (p) (p #t)))
 (define second (lambda (p) (p #f)))
 
-(print "first(pair) = " (first pair))
-(print "second(pair) = " (second pair))
+(println "first(pair) = " (first pair))
+(println "second(pair) = " (second pair))
 
 ; Multiple levels of nesting
 (define make-adder-multiplier (lambda (base) 
@@ -53,4 +53,4 @@
 (define add2-mul3 (make-adder-multiplier 2))
 (define add2-mul3-then-add5 ((add2-mul3 3) 5))
 
-(print "add2-mul3-then-add5 = " add2-mul3-then-add5)
+(println "add2-mul3-then-add5 = " add2-mul3-then-add5)
