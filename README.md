@@ -1,6 +1,6 @@
 # LAP: Lisp-like Applied Processor
 
-A Lisp interpreter written in Odin that supports arithmetic, functions, lambda expressions, closures, conditionals, and **bootstrapping capabilities**.
+A Lisp interpreter written in Odin that supports arithmetic, functions, lambda expressions, closures, conditionals, **multiline input**, and **bootstrapping capabilities**.
 
 ## What LAP Does
 
@@ -16,13 +16,14 @@ LAP takes Lisp-like expressions and evaluates them. It processes code through th
 
 ```lisp
 ; Arithmetic
-(+ 1 2)                    ; => 3.000
-(* 3 4)                    ; => 12.000
-(- 10 5)                   ; => 5.000
+(+ 1 2)                    ; => 3
+(* 3 4)                    ; => 12
+(- 10 5)                   ; => 5
+(/ 20 4)                   ; => 5
 
 ; Variables
 (define x 42)
-(+ x 8)                    ; => 50.000
+(+ x 8)                    ; => 50
 ```
 
 ### Functions
@@ -30,14 +31,14 @@ LAP takes Lisp-like expressions and evaluates them. It processes code through th
 ```lisp
 ; Define functions
 (define (square x) (* x x))
-(square 5)                 ; => 25.000
+(square 5)                 ; => 25
 
 ; Lambda functions
 (define double (lambda (x) (+ x x)))
-(double 7)                 ; => 14.000
+(double 7)                 ; => 14
 
 ; Anonymous lambdas
-((lambda (x y) (+ x y)) 3 4)  ; => 7.000
+((lambda (x y) (+ x y)) 3 4)  ; => 7
 ```
 
 ### Closures & Higher-Order Functions
@@ -46,14 +47,14 @@ LAP takes Lisp-like expressions and evaluates them. It processes code through th
 ; Closures and higher-order functions
 (define make-adder (lambda (n) (lambda (x) (+ x n))))
 (define add5 (make-adder 5))
-(add5 3)                   ; => 8.000
+(add5 3)                   ; => 8
 ```
 
 ### Conditionals
 
 ```lisp
 ; If statements
-(if (< 3 5) 42 0)         ; => 42.000
+(if (< 3 5) 42 0)         ; => 42
 (if (> 2 8) "yes" "no")   ; => "no"
 ```
 
@@ -72,9 +73,34 @@ LAP takes Lisp-like expressions and evaluates them. It processes code through th
 
 ```lisp
 ; Print function
-(print 42)                 ; => 42.000
+(print 42)                 ; => 42
 (print "Hello")            ; => "Hello"
 (print #t #f)              ; => #t #f
+```
+
+### Multiline Input Support
+
+LAP supports **multiline expressions** - you can split complex expressions across multiple lines:
+
+```lisp
+; Complex multiline function definition
+(define (complex-function x y z)
+  (if (> x 0)
+    (+ (* x y)
+       (/ z 2)
+       (- y x))
+    (* x y z)))
+
+; Nested conditional with multiple operations
+(define test-nested
+  (lambda (a b c)
+    (if (> a b)
+      (if (> b c)
+        (+ a b c)
+        (* a b c))
+      (if (= a b)
+        (+ a b)
+        (- a b)))))
 ```
 
 ### Bootstrapping Functions
@@ -82,11 +108,14 @@ LAP takes Lisp-like expressions and evaluates them. It processes code through th
 LAP includes core functions that enable **self-hosting** - building more complex functionality in LAP itself:
 
 ```lisp
-; Read input from stdin
+; Read input from stdin (supports multiline)
 (read)                     ; => user input as string
 
+; Read single line input
+(read-line)                ; => single line as string
+
 ; Evaluate strings as LAP code
-(eval "(+ 5 3)")           ; => 8.000
+(eval "(+ 5 3)")           ; => 8
 
 ; Load and execute files
 (load "examples/basic.lap")
@@ -94,9 +123,15 @@ LAP includes core functions that enable **self-hosting** - building more complex
 ; String operations
 (concat "Hello" " " "World") ; => "Hello World"
 (str= "test" "test")       ; => #t
+(str-len "hello")          ; => 5
+(str-ref "hello" 1)        ; => "e"
+(str-trim "  hello  ")     ; => "hello"
 
 ; Multiple expressions
-(begin 1 2 3)              ; => 3.000
+(begin 1 2 3)              ; => 3
+
+; Local variable bindings
+(let ((x 10) (y 20)) (+ x y))  ; => 30
 ```
 
 ### Complex Examples
@@ -105,10 +140,10 @@ LAP includes core functions that enable **self-hosting** - building more complex
 ; Recursive factorial
 (define factorial (lambda (n) 
   (if (= n 0) 1 (* n (factorial (- n 1))))))
-(factorial 5)              ; => 120.000
+(factorial 5)              ; => 120
 
 ; Nested expressions
-(+ (* 3 4) (- 10 5))       ; => 17.000
+(+ (* 3 4) (- 10 5))       ; => 17
 ```
 
 ## Running LAP
@@ -123,39 +158,67 @@ odin run .
 odin run . -- examples/filename.lap
 ```
 
-### Interactive REPL
+### Interactive REPLs
 
-LAP includes a **self-hosted REPL** written entirely in LAP:
+LAP includes **two REPL implementations**:
+
+#### 1. Odin REPL (Built-in)
 
 ```bash
-# Start the interactive REPL
+# Start the built-in REPL with multiline support
+lap.exe --repl
+# or
+odin run . -repl
+```
+
+Features:
+
+- **Built-in multiline support** - automatically continues reading until parentheses are balanced
+- **Clean prompt** - shows `>` for first line, `  ` for continuation
+- **Windows-compatible** - handles `\r\n` line endings
+
+#### 2. LAP REPL (Self-hosted)
+
+```bash
+# Start the self-hosted REPL written entirely in LAP
+lap.exe examples/repl.lap
+# or
 odin run . -- examples/repl.lap
 ```
 
-The REPL supports:
+Features:
 
-- **Interactive expression evaluation** - Type LAP expressions and see results
-- **Piped input** - Process expressions from shell commands
-- **Built-in help system** (`help`)
-- **File loading** (`load`)
-- **Clean exit** (`quit`)
+- **100% written in LAP** - demonstrates bootstrapping capabilities
+- **Custom multiline logic** - implements its own parentheses balancing
+- **Built-in commands** - `help`, `load`, `quit`
+- **Educational** - shows how to build complex functionality in LAP itself
 
 #### REPL Examples
 
 ```bash
-# Interactive mode
-odin run . -- examples/repl.lap
-> (+ 2 3)
-5
-> (print "Hello, LAP!")
-"Hello, LAP!"
-0
-> quit
-Goodbye!
+# Built-in REPL
+lap.exe --repl
+> (define (fib n)
+    (if (<= n 1)
+        n
+        (+ (fib (- n 1)) (fib (- n 2)))))
+#<lambda>
+> (fib 10)
+55
 
-# Piped input mode
-echo "(+ 2 3)" | odin run . -- examples/repl.lap
-echo '(print "Hello, World!")' | odin run . -- examples/repl.lap
+# Self-hosted REPL
+lap.exe examples/repl.lap
+lap> (define x 42)
+lap> (print x)
+42
+lap> help
+Available commands:
+  quit - exit the REPL
+  help - show this help
+  load <file> - load and execute a file
+  Any LAP expression - evaluate it
+lap> quit
+Goodbye!
 ```
 
 ## Building LAP
@@ -172,7 +235,7 @@ The simplest way to build LAP is:
 odin build .
 ```
 
-This will produce `LAP.exe` on Windows, or `lap` on Linux/macOS, in the current directory.
+This will produce `lap.exe` on Windows, or `lap` on Linux/macOS, in the current directory.
 
 To customize the output name or build for other platforms, see below:
 
@@ -200,7 +263,10 @@ Once built, you can use the `lap` executable directly:
 # Run a specific example file
 ./lap examples/factorial.lap
 
-# Start the REPL
+# Start the built-in REPL
+./lap --repl
+
+# Start the self-hosted REPL
 ./lap examples/repl.lap
 
 # Process input from pipe
@@ -291,6 +357,7 @@ This foundation makes LAP suitable for:
 - **Windows-compatible** line ending handling (`\r\n`)
 - **Comment filtering** (lines starting with `;`)
 - **Blank line removal** for clean execution
+- **Multiline input support** with automatic parentheses balancing
 
 ### Error Handling
 

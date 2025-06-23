@@ -170,6 +170,39 @@ eval :: proc(expr: Expr, env: ^Env) -> Value {
             };
         }
 
+        // Special form: let
+        if head.kind == Expr_Kind.Atom && head.value == "let" {
+            if len(args) < 2 {
+                return make_error("Invalid let syntax: need bindings and body");
+            }
+            if args[0].kind != Expr_Kind.List {
+                return make_error("Let bindings must be a list");
+            }
+            
+            // Create a new environment chained to the current one
+            let_env := Env{table = make(map[string]Value), parent = env};
+            
+            // Bind variables
+            for binding in args[0].children {
+                if binding.kind != Expr_Kind.List || len(binding.children) != 2 {
+                    return make_error("Each let binding must be a (name value) pair");
+                }
+                name_expr := binding.children[0];
+                value_expr := binding.children[1];
+                if name_expr.kind != Expr_Kind.Atom {
+                    return make_error("Let binding name must be a symbol");
+                }
+                let_env.table[name_expr.value] = eval(value_expr, env);
+            }
+            
+            // Evaluate the body in the new environment
+            result := Value{kind = Value_Kind.Number, number = 0};
+            for i := 1; i < len(args); i += 1 {
+                result = eval(args[i], &let_env);
+            }
+            return result;
+        }
+
         // Evaluate head to get function
         fn_val := eval(head, env);
         if fn_val.kind != Value_Kind.Proc && fn_val.kind != Value_Kind.Lambda {
@@ -238,6 +271,112 @@ apply_lambda :: proc(lambda: Value, args: []Value) -> Value {
     return result;
 }
 
+// Helper function to check if parentheses are balanced
+is_balanced :: proc(input: string) -> bool {
+    paren_count := 0;
+    for i := 0; i < len(input); i += 1 {
+        if input[i] == '(' {
+            paren_count += 1;
+        } else if input[i] == ')' {
+            paren_count -= 1;
+            if paren_count < 0 {
+                return false; // Unmatched closing parenthesis
+            }
+        }
+    }
+    return paren_count == 0;
+}
+
+// Helper function to read multiline input
+read_multiline_input :: proc() -> string {
+    input_buffer: [dynamic]u8;
+    line_buffer: [1024]u8;
+    
+    fmt.print("> ");
+    
+    for {
+        n, _ := os.read(os.stdin, line_buffer[:]);
+        if n == 0 {
+            break;
+        }
+        
+        // Remove carriage return and newline for Windows compatibility
+        end := n;
+        if end > 0 && line_buffer[end-1] == '\n' {
+            end -= 1;
+        }
+        if end > 0 && line_buffer[end-1] == '\r' {
+            end -= 1;
+        }
+        
+        // Append the line to our buffer
+        for i := 0; i < end; i += 1 {
+            append(&input_buffer, line_buffer[i]);
+        }
+        
+        // Add a space between lines for proper tokenization
+        append(&input_buffer, ' ');
+        
+        current_input := string(input_buffer[:]);
+        
+        // Check if the input is balanced
+        if is_balanced(current_input) {
+            break;
+        }
+        
+        // Show continuation prompt
+        fmt.print("  ");
+    }
+    
+    result := string(input_buffer[:]);
+    delete(input_buffer);
+    return result;
+}
+
+// Print procedure for displaying values
+print_proc :: proc(args: []Value) -> Value {
+    for arg, i in args {
+        if i > 0 {
+            fmt.print(" ");
+        }
+        switch arg.kind {
+        case Value_Kind.Number:
+            // Check if the number is a whole number
+            if arg.number == f64(int(arg.number)) {
+                fmt.printf("%d", int(arg.number));
+            } else {
+                // Use %g to automatically remove trailing zeros
+                fmt.printf("%g", arg.number);
+            }
+        case Value_Kind.Bool:
+            if arg.boolean {
+                fmt.print("#t");
+            } else {
+                fmt.print("#f");
+            }
+        case Value_Kind.String:
+            fmt.printf("\"%s\"", arg.string);
+        case Value_Kind.List:
+            fmt.print("(");
+            for child, j in arg.list {
+                if j > 0 {
+                    fmt.print(" ");
+                }
+                print_proc([]Value{child});
+            }
+            fmt.print(")");
+        case Value_Kind.Proc:
+            fmt.print("#<procedure>");
+        case Value_Kind.Lambda:
+            fmt.print("#<lambda>");
+        case:
+            fmt.print("unknown");
+        }
+    }
+    fmt.println();
+    return Value{kind = Value_Kind.Number, number = 0};
+}
+
 make_global_env :: proc() -> Env {
     env := Env{table = make(map[string]Value)};
 
@@ -270,6 +409,20 @@ make_global_env :: proc() -> Env {
         result := args[0].number;
         for i := 1; i < len(args); i += 1 {
             result -= args[i].number;
+        }
+        return Value{kind = Value_Kind.Number, number = result};
+    };
+
+    div_proc :: proc(args: []Value) -> Value {
+        if len(args) < 2 {
+            return make_error("/ requires at least 2 arguments");
+        }
+        result := args[0].number;
+        for i := 1; i < len(args); i += 1 {
+            if args[i].number == 0 {
+                return make_error("Division by zero");
+            }
+            result /= args[i].number;
         }
         return Value{kind = Value_Kind.Number, number = result};
     };
@@ -316,68 +469,23 @@ make_global_env :: proc() -> Env {
         return Value{kind = Value_Kind.Bool, boolean = args[0].number != args[1].number};
     };
 
-    print_proc :: proc(args: []Value) -> Value {
-        for arg, i in args {
-            if i > 0 {
-                fmt.print(" ");
-            }
-            switch arg.kind {
-            case Value_Kind.Number:
-                // Check if the number is a whole number
-                if arg.number == f64(int(arg.number)) {
-                    fmt.printf("%d", int(arg.number));
-                } else {
-                    // Use %g to automatically remove trailing zeros
-                    fmt.printf("%g", arg.number);
-                }
-            case Value_Kind.Bool:
-                if arg.boolean {
-                    fmt.print("#t");
-                } else {
-                    fmt.print("#f");
-                }
-            case Value_Kind.String:
-                fmt.printf("\"%s\"", arg.string);
-            case Value_Kind.List:
-                fmt.print("(");
-                for child, j in arg.list {
-                    if j > 0 {
-                        fmt.print(" ");
-                    }
-                    print_proc([]Value{child});
-                }
-                fmt.print(")");
-            case Value_Kind.Proc:
-                fmt.print("#<procedure>");
-            case Value_Kind.Lambda:
-                fmt.print("#<lambda>");
-            case:
-                fmt.print("unknown");
-            }
-        }
-        fmt.println();
-        return Value{kind = Value_Kind.Number, number = 0};
+    print_proc_wrapper :: proc(args: []Value) -> Value {
+        return print_proc(args);
     };
 
     read_proc :: proc(args: []Value) -> Value {
         if len(args) != 0 {
             return make_error("read takes no arguments");
         }
-        fmt.print("> ");
-        input: [1024]u8;
-        n, _ := os.read(os.stdin, input[:]);
-        if n == 0 {
+        
+        input := read_multiline_input();
+        if len(input) == 0 {
             return Value{kind = Value_Kind.String, string = ""};
         }
-        // Remove both carriage return and newline for Windows compatibility
-        end := n;
-        if end > 0 && input[end-1] == '\n' {
-            end -= 1;
-        }
-        if end > 0 && input[end-1] == '\r' {
-            end -= 1;
-        }
-        return Value{kind = Value_Kind.String, string = string(input[:end])};
+        
+        // Trim trailing space that we added for tokenization
+        trimmed := strings.trim_space(input);
+        return Value{kind = Value_Kind.String, string = trimmed};
     };
 
     eval_proc :: proc(args: []Value, env: ^Env) -> Value {
@@ -487,22 +595,79 @@ make_global_env :: proc() -> Env {
         return args[len(args) - 1];
     };
 
+    str_len_proc :: proc(args: []Value) -> Value {
+        if len(args) != 1 || args[0].kind != Value_Kind.String {
+            return make_error("str-len takes exactly 1 string argument");
+        }
+        return Value{kind = Value_Kind.Number, number = f64(len(args[0].string))};
+    };
+
+    str_ref_proc :: proc(args: []Value) -> Value {
+        if len(args) != 2 || args[0].kind != Value_Kind.String || args[1].kind != Value_Kind.Number {
+            return make_error("str-ref takes a string and an index");
+        }
+        s := args[0].string;
+        idx := int(args[1].number);
+        if idx < 0 || idx >= len(s) {
+            return make_error("str-ref: index out of bounds");
+        }
+        // Return a string of length 1
+        return Value{kind = Value_Kind.String, string = string([]u8{s[idx]})};
+    };
+
+    str_trim_proc :: proc(args: []Value) -> Value {
+        if len(args) != 1 || args[0].kind != Value_Kind.String {
+            return make_error("str-trim takes exactly 1 string argument");
+        }
+        trimmed := strings.trim_space(args[0].string);
+        return Value{kind = Value_Kind.String, string = trimmed};
+    };
+
+    read_line_proc :: proc(args: []Value) -> Value {
+        if len(args) != 0 {
+            return make_error("read-line takes no arguments");
+        }
+        
+        fmt.print("> ");
+        input: [1024]u8;
+        n, _ := os.read(os.stdin, input[:]);
+        if n == 0 {
+            return Value{kind = Value_Kind.String, string = ""};
+        }
+        
+        // Remove carriage return and newline for Windows compatibility
+        end := n;
+        if end > 0 && input[end-1] == '\n' {
+            end -= 1;
+        }
+        if end > 0 && input[end-1] == '\r' {
+            end -= 1;
+        }
+        
+        return Value{kind = Value_Kind.String, string = string(input[:end])};
+    };
+
     env.table["+"] = Value{kind = Value_Kind.Proc, procedure = add_proc};
     env.table["*"] = Value{kind = Value_Kind.Proc, procedure = mul_proc};
     env.table["-"] = Value{kind = Value_Kind.Proc, procedure = sub_proc};
+    env.table["/"] = Value{kind = Value_Kind.Proc, procedure = div_proc};
     env.table["="] = Value{kind = Value_Kind.Proc, procedure = eq_proc};
     env.table["<"] = Value{kind = Value_Kind.Proc, procedure = lt_proc};
     env.table[">"] = Value{kind = Value_Kind.Proc, procedure = gt_proc};
     env.table["<="] = Value{kind = Value_Kind.Proc, procedure = lte_proc};
     env.table[">="] = Value{kind = Value_Kind.Proc, procedure = gte_proc};
     env.table["!="] = Value{kind = Value_Kind.Proc, procedure = ne_proc};
-    env.table["print"] = Value{kind = Value_Kind.Proc, procedure = print_proc};
+    env.table["print"] = Value{kind = Value_Kind.Proc, procedure = print_proc_wrapper};
     env.table["read"] = Value{kind = Value_Kind.Proc, procedure = read_proc};
     env.table["eval"] = Value{kind = Value_Kind.Proc, procedure_with_env = eval_proc};
     env.table["load"] = Value{kind = Value_Kind.Proc, procedure = load_proc};
     env.table["concat"] = Value{kind = Value_Kind.Proc, procedure = concat_proc};
     env.table["str="] = Value{kind = Value_Kind.Proc, procedure = str_eq_proc};
     env.table["begin"] = Value{kind = Value_Kind.Proc, procedure = begin_proc};
+    env.table["str-len"] = Value{kind = Value_Kind.Proc, procedure = str_len_proc};
+    env.table["str-ref"] = Value{kind = Value_Kind.Proc, procedure = str_ref_proc};
+    env.table["str-trim"] = Value{kind = Value_Kind.Proc, procedure = str_trim_proc};
+    env.table["read-line"] = Value{kind = Value_Kind.Proc, procedure = read_line_proc};
 
     return env;
 }

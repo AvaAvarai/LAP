@@ -21,12 +21,17 @@ This directory contains example programs demonstrating LAP's capabilities.
 
 LAP includes core functions that enable bootstrapping - building more complex functionality in LAP itself:
 
-- **`read`** - Read a line from stdin
+- **`read`** - Read multiline input from stdin (automatically balances parentheses)
+- **`read-line`** - Read a single line from stdin
 - **`eval`** - Evaluate a string as LAP code
 - **`load`** - Load and execute a file
 - **`concat`** - Concatenate strings
 - **`str=`** - String equality comparison
+- **`str-len`** - Get string length
+- **`str-ref`** - Get character at index
+- **`str-trim`** - Trim whitespace from string
 - **`begin`** - Execute multiple expressions, return last result
+- **`let`** - Local variable bindings
 
 ## Running Examples
 
@@ -34,57 +39,102 @@ LAP includes core functions that enable bootstrapping - building more complex fu
 # Run a specific example
 odin run . -- examples/basic.lap
 
-# Run the REPL
+# Run the self-hosted REPL
+odin run . -- examples/repl.lap
+
+# Use the built-in REPL
+lap.exe --repl
+```
+
+## REPL Implementations
+
+LAP includes **two REPL implementations**:
+
+### 1. Built-in REPL (Odin)
+
+```bash
+lap.exe --repl
+# or
+odin run . -repl
+```
+
+**Features:**
+
+- **Built-in multiline support** - automatically continues reading until parentheses are balanced
+- **Clean prompt** - shows `>` for first line, `  ` for continuation
+- **Windows-compatible** - handles `\r\n` line endings
+- **Fast and efficient** - written in Odin
+
+**Example:**
+
+```bash
+lap.exe --repl
+> (define (fib n)
+    (if (<= n 1)
+        n
+        (+ (fib (- n 1)) (fib (- n 2)))))
+#<lambda>
+> (fib 10)
+55
+```
+
+### 2. Self-hosted REPL (LAP)
+
+```bash
+lap.exe examples/repl.lap
+# or
 odin run . -- examples/repl.lap
 ```
 
-## REPL Demo
+**Features:**
 
-The `repl.lap` file demonstrates bootstrapping by implementing a **fully functional REPL** entirely in LAP. It shows how the core functions can be combined to create interactive functionality.
+- **100% written in LAP** - demonstrates bootstrapping capabilities
+- **Custom multiline logic** - implements its own parentheses balancing using `count-parens`
+- **Built-in commands** - `help`, `load`, `quit`
+- **Educational** - shows how to build complex functionality in LAP itself
+- **String manipulation** - uses `str-len`, `str-ref`, `str-trim` for input processing
 
-### Features
-
-- **Interactive expression evaluation** - Type LAP expressions and see results
-- **Piped input support** - Process expressions from shell commands
-- **Built-in help system** (`help` command)
-- **File loading capability** (`load` command)
-- **Clean exit** with `quit` command
-- **EOF handling** - gracefully exits when input is exhausted
-
-### Usage Examples
+**Example:**
 
 ```bash
-# Interactive mode
-odin run . -- examples/repl.lap
-> (+ 2 3)
-5.000
-> (print "Hello, LAP!")
-"Hello, LAP!"
-0.000
-> help
+lap.exe examples/repl.lap
+lap> (define x 42)
+lap> (print x)
+42
+lap> help
 Available commands:
   quit - exit the REPL
   help - show this help
   load <file> - load and execute a file
   Any LAP expression - evaluate it
-> quit
+lap> quit
 Goodbye!
-
-# Piped input mode
-echo "(+ 2 3)" | odin run . -- examples/repl.lap
-echo '(print "Hello, World!")' | odin run . -- examples/repl.lap
-echo "(* 6 7)" | odin run . -- examples/repl.lap
 ```
 
-### Technical Implementation
+## Multiline Input Support
 
-The REPL demonstrates several advanced LAP features:
+Both REPLs support **multiline expressions** - you can split complex expressions across multiple lines:
 
-- **Environment chaining** - Proper lexical scoping with parent environment references
-- **Dynamic evaluation** - Using `eval` to execute strings as LAP code
-- **Input processing** - Handling user input and EOF conditions
-- **Control flow** - Conditional logic and recursion for the main loop
-- **Error handling** - Graceful handling of invalid expressions
+```lisp
+; Complex multiline function definition
+(define (complex-function x y z)
+  (if (> x 0)
+    (+ (* x y)
+       (/ z 2)
+       (- y x))
+    (* x y z)))
+
+; Nested conditional with multiple operations
+(define test-nested
+  (lambda (a b c)
+    (if (> a b)
+      (if (> b c)
+        (+ a b c)
+        (* a b c))
+      (if (= a b)
+        (+ a b)
+        (- a b)))))
+```
 
 ## Features Demonstrated
 
@@ -94,3 +144,5 @@ The REPL demonstrates several advanced LAP features:
 - **Environment management**: Proper variable scoping and closure support
 - **Bootstrapping**: Building complex functionality using LAP itself
 - **Interactive development**: Full REPL with help and file loading
+- **String manipulation**: Character-by-character string processing
+- **Local bindings**: `let` expressions for temporary variable scoping

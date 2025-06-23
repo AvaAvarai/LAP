@@ -6,9 +6,14 @@ import "core:strings"
 
 main :: proc() {
     if len(os.args) > 1 {
-        // File input mode
-        filename := os.args[1];
-        run_file(filename);
+        if os.args[1] == "--repl" {
+            // Interactive REPL mode
+            run_repl();
+        } else {
+            // File input mode
+            filename := os.args[1];
+            run_file(filename);
+        }
     } else {
         // Test cases mode (existing behavior)
         run_test_cases();
@@ -99,6 +104,48 @@ run_test_cases :: proc() {
         
         for expr in exprs {
             _ = eval(expr, &env);
+        }
+    }
+}
+
+run_repl :: proc() {
+    fmt.println("LAP REPL - Type expressions or (exit) to quit");
+    fmt.println("Multiline input is supported - continue typing until parentheses are balanced");
+    
+    global_env := make_global_env();
+    
+    for {
+        // Use the read function from the evaluator
+        read_result := read_multiline_input();
+        if len(read_result) == 0 {
+            continue;
+        }
+        
+        // Check for exit command
+        if strings.trim_space(read_result) == "(exit)" {
+            fmt.println("Goodbye!");
+            break;
+        }
+        
+        // Tokenize and parse
+        tokens := tokenize(read_result);
+        if len(tokens) == 0 {
+            continue;
+        }
+        
+        exprs, _ := parse_exprs(tokens);
+        if len(exprs) == 0 {
+            continue;
+        }
+        
+        // Evaluate each expression
+        for expr in exprs {
+            result := eval(expr, &global_env);
+            // Don't print the result if it's just a number 0 (likely from print statements)
+            if result.kind != Value_Kind.Number || result.number != 0 {
+                // Print the result
+                print_proc([]Value{result});
+            }
         }
     }
 }

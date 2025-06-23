@@ -1,19 +1,44 @@
-; Simple REPL implementation in LAP
+; Simple REPL implementation in LAP with multiline support
 ; This demonstrates bootstrapping - the REPL is written in LAP itself
 
-(print "=== LAP REPL ===")
+(print "=== LAP REPL (multiline) ===")
 (print "Type expressions to evaluate")
 (print "Type 'quit' to exit")
 (print "Type 'help' for help")
 
+; Helper to count parentheses - simplified version
+(define (count-parens str)
+  (define (loop idx count)
+    (if (>= idx (str-len str))
+        count
+        (let ((c (str-ref str idx)))
+          (if (str= c "(")
+              (loop (+ idx 1) (+ count 1))
+              (if (str= c ")")
+                  (loop (+ idx 1) (- count 1))
+                  (loop (+ idx 1) count))))))
+  (loop 0 0))
+
+; Read lines until parentheses are balanced
+(define (read-multiline-acc acc)
+  (print "  ")
+  (let ((line (read-line)))
+    (let ((new-acc (concat acc " " line)))
+      (if (= (count-parens new-acc) 0)
+          (str-trim new-acc)
+          (read-multiline-acc new-acc)))))
+
+(define (read-multiline)
+  (read-multiline-acc ""))
+
 ; Define the REPL loop
 (define (repl-loop)
-  (define input (read))
-  (if (str= input "")
-      (print "Goodbye!")
-      (if (str= input "quit")
+  (print "lap> ")
+  (let ((input (read-multiline)))
+    (let ((trimmed-input (str-trim input)))
+      (if (str= trimmed-input "quit")
           (print "Goodbye!")
-          (if (str= input "help")
+          (if (str= trimmed-input "help")
               (begin
                 (print "Available commands:")
                 (print "  quit - exit the REPL")
@@ -21,16 +46,18 @@
                 (print "  load <file> - load and execute a file")
                 (print "  Any LAP expression - evaluate it")
                 (repl-loop))
-              (if (str= input "load")
+              (if (str= trimmed-input "load")
                   (begin
                     (print "Enter filename:")
-                    (define filename (read))
-                    (load filename)
-                    (repl-loop))
+                    (let ((filename (read-line)))
+                      (load filename)
+                      (repl-loop)))
                   (begin
-                    (define result (eval input))
-                    (print result)
-                    (repl-loop)))))))
+                    (let ((result (eval input)))
+                      (if (= result 0)
+                          (print "Expression evaluated successfully")
+                          (print result))
+                      (repl-loop))))))))
 
 ; Start the REPL
 (repl-loop)
