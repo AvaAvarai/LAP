@@ -42,4 +42,4 @@
 
 (if (<= b a)
     (print "b is less than or equal to a")
-    (print "b is greater than a")) 
+    (print "b is greater than a"))

@@ -53,4 +53,4 @@
 (define add2-mul3 (make-adder-multiplier 2))
 (define add2-mul3-then-add5 ((add2-mul3 3) 5))
 
-(print "add2-mul3-then-add5 = " add2-mul3-then-add5) 
+(print "add2-mul3-then-add5 = " add2-mul3-then-add5)

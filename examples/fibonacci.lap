@@ -14,4 +14,4 @@
 (print "fib(4) = " (fib 4))
 (print "fib(5) = " (fib 5))
 (print "fib(6) = " (fib 6))
-(print "fib(7) = " (fib 7)) 
+(print "fib(7) = " (fib 7))

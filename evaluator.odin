@@ -323,7 +323,13 @@ make_global_env :: proc() -> Env {
             }
             switch arg.kind {
             case Value_Kind.Number:
-                fmt.printf("%f", arg.number);
+                // Check if the number is a whole number
+                if arg.number == f64(int(arg.number)) {
+                    fmt.printf("%d", int(arg.number));
+                } else {
+                    // Use %g to automatically remove trailing zeros
+                    fmt.printf("%g", arg.number);
+                }
             case Value_Kind.Bool:
                 if arg.boolean {
                     fmt.print("#t");
